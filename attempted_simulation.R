@@ -173,7 +173,18 @@ jags_data<-list(K=K, K.bin=K.bin, n=n,
                 #W.SURG=W.SURG.data, d.W.SURG=d.W.SURG
                 
 )
-do.one(2021)
+# do.one(2021)
+# seed = 2021
+# set.seed(seed)
+# outj<-jags(jags_data, inits=inits, parameters.to.save=params,
+#            model.file=paste(location.of.r.scripts, "JAGS-prediction-model.txt", sep="/"),
+#            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
+# out<-outj$BUGSoutput
+# for(j in 1:length(out$sims.list)){
+#   write.csv(out$sims.list[[j]],
+#             paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
+# }
+save(out, file = "generated-files-new/jags_output_sim.RData")
 
 ## compare results
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
