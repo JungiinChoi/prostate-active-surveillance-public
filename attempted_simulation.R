@@ -1,30 +1,81 @@
-jags_rhoint <- read_csv("~/Downloads/muffadal-prostate-active-surveillance/generated-files/jags-prediction-rho_int-1000.csv")
-plot(jags_rhoint$V1, type = "l")
-jags_etahat <- read_csv("~/Downloads/muffadal-prostate-active-surveillance/generated-files/jags-prediction-eta.hat-1000.csv")
-jags_etahat_bin <- jags_etahat>2 ## eta = 2 for aggressive cancer?
-hist(rowMeans(jags_etahat_bin))
+rm(list=ls())
+source('R-scripts/load_libs.R')
+base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/" #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
+location.of.data <- paste0(base.location, "data")
+location.of.r.scripts <- paste0(base.location, "R-scripts")
+location.of.generated.files <- paste0(base.location, "generated-files-with-bootstrapped-data")
 
-jags_etahat <- read_csv("~/Downloads/muffadal-prostate-active-surveillance/generated-files-new-rho only/jags-prediction-eta.hat-2021.csv")
-jags_etahat_bin <- jags_etahat>2 ## eta = 2 for aggressive cancer?
-hist(rowMeans(jags_etahat_bin))
+name.of.pt.data <- "Demographic_boot.csv" #"demographics with physician info.2015.csv"
+name.of.bx.data <- "Biopsy_boot.csv" #"Biopsy data_2015.csv"
+name.of.psa.data <- "PSA_boot.csv" #"PSA.2015.csv"
+name.of.tx.data <- "Treatment_boot.csv" #"treatment_2015.csv"
 
-jags_sigma_int <- read_csv("generated-files/jags-prediction-sigma_int-1000.csv")
-jags_sigma_slope <- read_csv("generated-files/jags-prediction-sigma_slope-1000.csv")
-jags_sigma_cov <- read_csv("generated-files/jags-prediction-cov_int_slope-1000.csv")
-jags_alpha <- read_csv("generated-files/jags-prediction-alpha-1000.csv")
-jags_gamma <- read_csv("generated-files/jags-prediction-gamma.PGG-1000.csv")
-jags_sigma2 <- read_csv("generated-files/jags-prediction-sigma_res-1000.csv")
-jags_muint <- read_csv("generated-files/jags-prediction-mu_int-1000.csv")
-jags_muslope <- read_csv("generated-files/jags-prediction-mu_slope-1000.csv")
-jags_rhoint <- read_csv("generated-files/jags-prediction-rho_int-1000.csv")
-jags_rhocoef <- read_csv("generated-files/jags-prediction-rho_coef-1000.csv")
+# pt.data.original <- read.csv(paste0(location.of.data, "/",name.of.pt.data))
+# bx.data.original <- read.csv(paste0(location.of.data, "/",name.of.bx.data))
+# psa.data.original <- read.csv(paste0(location.of.data, "/",name.of.psa.data))
+# tx.data.original <- read.csv(paste0(location.of.data, "/",name.of.tx.data))
+# 
+# ## bootstrap by patient (use psa.data patients) # which(!(psa.data.original$clinical_PTnum %in% pt.data.original$clinical_PTnum))
+# ptnum <- unique(psa.data.original$clinical_PTnum)
+# set.seed(2021)
+# boot_ptnum <- sample(ptnum, 2*length(ptnum), replace = T)
+# new_PTnum <- 1:length(boot_ptnum)
+# pt.data <- NULL
+# for(i in 1:length(boot_ptnum)){
+#   tmp <- pt.data.original[pt.data.original$clinical_PTnum == boot_ptnum[i],]
+#   if(nrow(tmp) != 0){tmp$new_PTnum <- new_PTnum[i]}
+#   pt.data <- rbind(pt.data, tmp)
+# }
+# 
+# 
+# ## match other datasets
+# bx.data <- NULL
+# for(i in 1:length(boot_ptnum)){
+#   tmp <- bx.data.original[which(bx.data.original$clinical_PTnum == boot_ptnum[i]),]
+#   if(nrow(tmp) != 0){tmp$new_PTnum <- new_PTnum[i]}
+#   bx.data <- rbind(bx.data, tmp)
+# }
+# 
+# psa.data <- NULL
+# for(i in 1:length(boot_ptnum)){
+#   tmp <- psa.data.original[which(psa.data.original$clinical_PTnum == boot_ptnum[i]),]
+#   if(nrow(tmp) != 0){tmp$new_PTnum <- new_PTnum[i]}
+#   psa.data <- rbind(psa.data, tmp)
+# }
+# 
+# tx.data <- NULL
+# for(i in 1:length(boot_ptnum)){
+#   tmp <- tx.data.original[which(tx.data.original$clinical_PTnum == boot_ptnum[i]),]
+#   if(nrow(tmp) != 0){tmp$new_PTnum <- new_PTnum[i]}
+#   tx.data <- rbind(tx.data, tmp)
+# }
+# 
+# psa.data <- psa.data %>% dplyr::rename(clinical_PTnum_o = clinical_PTnum,
+#                                        clinical_PTnum = new_PTnum)
+# pt.data <- pt.data %>% dplyr::rename(clinical_PTnum_o = clinical_PTnum,
+#                                        clinical_PTnum = new_PTnum)
+# bx.data <- bx.data %>% dplyr::rename(clinical_PTnum_o = clinical_PTnum,
+#                                        clinical_PTnum = new_PTnum)
+# tx.data <- tx.data %>% dplyr::rename(clinical_PTnum_o = clinical_PTnum,
+#                                        clinical_PTnum = new_PTnum)
+# write.csv(psa.data, "data/PSA_boot.csv", row.names = F)
+# write.csv(pt.data, "data/Demographic_boot.csv", row.names = F)
+# write.csv(bx.data, "data/Biopsy_boot.csv", row.names = F)
+# write.csv(tx.data, "data/Treatment_boot.csv", row.names = F)
+
+
+
+date.pull<-as.numeric(Sys.Date())
+source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/"))
+source(paste(location.of.r.scripts,"data-prep-for-jags.R",sep="/"))
+source(paste(location.of.r.scripts,"argument-prep-for-jags.R",sep="/"))
+#source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
 
 # set param values ----
 ## prespecify rho intercept and rho slope
 rho_int  <- matrix(c(0.4, 2,4))
 rho_coef <- matrix(c(0.5, 0.8))
 ## mu_k for mean of b
-library(mvtnorm)
 mu_eta0 <- matrix(c(1.3, 0.02))
 mu_eta1 <- matrix(c(1.5,0.1))
 ## beta, Sgima, alpha, gamma and sigma^2
@@ -50,7 +101,7 @@ p.eta2 <- cum.e2 - cum.e1
 p.eta1 <- cum.e1
 set.seed(2021)
 tmp.eta <- NULL
-for(l in 1:n){
+for(l in 1:n){ 
   tmp <- sample(1:4, 1, replace=TRUE, prob= c(p.eta1[l], p.eta2[l], p.eta3[l], p.eta4[l]) )
   tmp.eta <- rbind(tmp.eta, tmp)
 }
@@ -96,13 +147,11 @@ dt_sim <- data.frame(id = psa.data$id,
                      Y.new = Y.new,
                      time = psa.data$time.since.dx,
                      Y.old = Y)
-library(dplyr)
 dt_sim <- dt_sim %>% left_join(eta_dt)
-library(ggplot2)
 ggplot(data = dt_sim, aes(x=time, y = Y.new, group = id, color = factor(eta.sim)))+
   geom_line(alpha = 0.2)+
   theme_classic()
-  
+
 ggplot(data = dt_sim, aes(x=time, y = Y.new, group = id, color = factor(eta.sim)))+
   geom_line(alpha = 0.2)+
   theme_classic()+
@@ -173,18 +222,18 @@ jags_data<-list(K=K, K.bin=K.bin, n=n,
                 #W.SURG=W.SURG.data, d.W.SURG=d.W.SURG
                 
 )
-# do.one(2021)
-# seed = 2021
-# set.seed(seed)
-# outj<-jags(jags_data, inits=inits, parameters.to.save=params,
-#            model.file=paste(location.of.r.scripts, "JAGS-prediction-model.txt", sep="/"),
-#            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
-# out<-outj$BUGSoutput
-# for(j in 1:length(out$sims.list)){
-#   write.csv(out$sims.list[[j]],
-#             paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
-# }
-save(out, file = "generated-files-new/jags_output_sim.RData")
+#do.one(2021)
+seed = 2021
+set.seed(seed)
+outj<-jags(jags_data, inits=inits, parameters.to.save=params,
+           model.file=paste(location.of.r.scripts, "JAGS-prediction-model.txt", sep="/"),
+           n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
+out<-outj$BUGSoutput
+for(j in 1:length(out$sims.list)){
+  write.csv(out$sims.list[[j]],
+            paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
+}
+save(out, file = "generated-files-with-bootstrapped-data/jags_output_sim.RData")
 
 ## compare results
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
@@ -200,15 +249,33 @@ jags_alpha <- read_csv("generated-files-new/jags-prediction-alpha-2021.csv")
 apply(jags_alpha, 2, get_stats)
 t(alpha)
 
-jags_rhoint <- read_csv("generated-files-new/jags-prediction-rho_int-2021.csv")
+jags_rhoint <- read_csv("generated-files-with-bootstrapped-data/jags-prediction-rho_int-2021.csv")
+jags_rhoint_1000 <- read_csv("generated-files/jags-prediction-rho_int-1000.csv")
 apply(jags_rhoint, 2, get_stats)
+apply(jags_rhoint_1000, 2, get_stats)
 t(rho_int)
 plot(jags_rhoint$V1, type = "l")
 
 jags_rhocoef <- read_csv("generated-files-new/jags-prediction-rho_coef-2021.csv")
+jags_rhocoef_1000 <- read_csv("generated-files/jags-prediction-rho_coef-1000.csv")
 apply(jags_rhocoef, 2, get_stats)
+apply(jags_rhocoef_1000, 2, get_stats)
 t(rho_coef)
 
 jags_etahat <- read_csv("generated-files-new/jags-prediction-eta.hat-2021.csv")
 jags_etahat_bin <- jags_etahat>2
 hist(rowMeans(jags_etahat_bin))
+
+# jags_sigma_int <- read_csv("generated-files/jags-prediction-sigma_int-1000.csv")
+# jags_sigma_slope <- read_csv("generated-files/jags-prediction-sigma_slope-1000.csv")
+# jags_sigma_cov <- read_csv("generated-files/jags-prediction-cov_int_slope-1000.csv")
+# jags_alpha <- read_csv("generated-files/jags-prediction-alpha-1000.csv")
+# jags_gamma <- read_csv("generated-files/jags-prediction-gamma.PGG-1000.csv")
+# jags_sigma2 <- read_csv("generated-files/jags-prediction-sigma_res-1000.csv")
+# jags_muint <- read_csv("generated-files/jags-prediction-mu_int-1000.csv")
+# jags_muslope <- read_csv("generated-files/jags-prediction-mu_slope-1000.csv")
+# jags_rhoint <- read_csv("generated-files/jags-prediction-rho_int-1000.csv")
+# jags_rhocoef <- read_csv("generated-files/jags-prediction-rho_coef-1000.csv")
+
+
+
