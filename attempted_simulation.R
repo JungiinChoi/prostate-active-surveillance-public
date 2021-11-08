@@ -5,10 +5,10 @@ location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
 location.of.generated.files <- paste0(base.location, "generated-files-with-bootstrapped-data")
 
-name.of.pt.data <- "Demographic_boot.csv" #"demographics with physician info.2015.csv"
-name.of.bx.data <- "Biopsy_boot.csv" #"Biopsy data_2015.csv"
-name.of.psa.data <- "PSA_boot.csv" #"PSA.2015.csv"
-name.of.tx.data <- "Treatment_boot.csv" #"treatment_2015.csv"
+name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
+name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
+name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
+name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
 
 # pt.data.original <- read.csv(paste0(location.of.data, "/",name.of.pt.data))
 # bx.data.original <- read.csv(paste0(location.of.data, "/",name.of.bx.data))
@@ -80,7 +80,7 @@ mu_eta0 <- matrix(c(1.3, 0.02))
 mu_eta1 <- matrix(c(1.5,0.1))
 ## beta, Sgima, alpha, gamma and sigma^2
 Beta <- matrix(c(0.5, 0.01)) #fixef coefficients for lme
-Sigma <- matrix(c(0.5, 0.01, 0.01, 0.1), nrow = 2) #ranef vcov for lme
+Sigma <- matrix(c(0.5, 0.01, 0.01, 0.01), nrow = 2) #ranef vcov for lme
 sigma2 <- 0.3 #variance of Y for lme
 alpha <- matrix(c(3.5, 4.7, 6))
 gamma <- matrix(c(0.6, -2, 0.9, 2, -8, 0.5, -0.3, 1.9, 1.3, 0.5)) # coefs for prop odds model
@@ -114,7 +114,7 @@ eta.data.sim <- eta.sim[obs.eta]
 
 # simulate e, b and Y ------
 set.seed(2021)
-res <- runif(n, 0,1)
+resid_var <- 0.5   #110121
 b <- NULL
 for(i in 1:n){
   if(eta.sim[i] <= 2){ ## use eta.bin here rather than eta
@@ -132,7 +132,7 @@ for(i in 1:length(unique(subj_psa))){
   etai <- eta.sim[j]
   Xi <- X.data[inx, ]
   bi <- matrix(b[j,])
-  ei <- res[j]
+  ei <- resid_var
   Zi <- Z.data[inx, ]
   Yi.mean = Xi %*% Beta + Zi %*% bi
   Yi = rmvnorm(1, Yi.mean, diag(ei, nrow = length(inx)))
@@ -148,14 +148,16 @@ dt_sim <- data.frame(id = psa.data$id,
                      time = psa.data$time.since.dx,
                      Y.old = Y)
 dt_sim <- dt_sim %>% left_join(eta_dt)
-ggplot(data = dt_sim, aes(x=time, y = Y.new, group = id, color = factor(eta.sim)))+
+ggplot(data = dt_sim[dt_sim$id %in% sample(unique(dt_sim$id), 10),], aes(x=time, y = exp(Y.new), group = id))+
   geom_line(alpha = 0.2)+
   theme_classic()
-
-ggplot(data = dt_sim, aes(x=time, y = Y.new, group = id, color = factor(eta.sim)))+
+ggplot(data = psa.data[psa.data$clinical_PTnum %in% sample(unique(psa.data$clinical_PTnum), 20),], aes(x=time.since.dx, y = exp(log.psa), group = clinical_PTnum))+
   geom_line(alpha = 0.2)+
-  theme_classic()+
-  facet_wrap(~eta.sim)
+  theme_classic()
+ggplot(data = psa.data, aes(x=time.since.dx, y = exp(log.psa), group = clinical_PTnum))+
+  geom_line(alpha = 0.2)+
+  theme_classic()
+# 
 
 
 # simulate R(PGG) ---
@@ -233,19 +235,19 @@ for(j in 1:length(out$sims.list)){
   write.csv(out$sims.list[[j]],
             paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
 }
-save(out, file = "generated-files-with-bootstrapped-data/jags_output_sim.RData")
+#save(out, file = "generated-files-with-bootstrapped-data/jags_output_sim.RData")
 
 ## compare results
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
-jags_beta <- read_csv("generated-files-new/jags-prediction-beta-2021.csv")
+jags_beta <- read_csv("generated-files/jags-prediction-beta-2021.csv")
 apply(jags_beta, 2, get_stats)
 t(Beta)
 
-jags_gamma <- read_csv("generated-files-new/jags-prediction-gamma.PGG-2021.csv")
+jags_gamma <- read_csv(paste0(location.of.generated.files,"/jags-prediction-gamma.PGG-2021.csv"))
 apply(jags_gamma, 2, get_stats)
 t(gamma)
 
-jags_alpha <- read_csv("generated-files-new/jags-prediction-alpha-2021.csv")
+jags_alpha <-read_csv(paste0(location.of.generated.files,"/jags-prediction-alpha-2021.csv"))
 apply(jags_alpha, 2, get_stats)
 t(alpha)
 

@@ -271,6 +271,8 @@ n_psa <- dim(psa.data)[1]
 
 #numeric PSA dates
 psa.data$dt.num <- as.numeric(as.Date(psa.data$PSA_Date, "%m/%d/%y"))
+psa.data <- psa.data[!is.na(psa.data$dt.num),] ## 080821
+n_psa <- dim(psa.data)[1]## 080821
 data.check(condition=as.logical(sum(is.na(psa.data$dt.num))==0), message="Problems converting PSA test date. NAs occurred.")
 
 #time since dx, age for each PSA test
