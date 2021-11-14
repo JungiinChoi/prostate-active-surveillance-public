@@ -120,14 +120,21 @@ generate_rand_coef <- function(cancer_state, mean_0, mean_1, cov) {
 }
 
 simulate_psa <- function(
-    cancer_state, fixed_eff_pred, rand_eff_pred, fixed_coef, rand_coef, 
+  cancer_state, fixed_eff_pred, rand_eff_pred, 
+    fixed_coef, rand_coef_mean_0, rand_coef_mean_1, rand_coef_cov,
     resid_var, psa_patient_index_map
   ) {
   # Predictors are in the long-format, with both patient and time along the column.
   # Incidentally, the fixed effect predictors are *not* time-dependent. And the
   # intercept is treated as a random effect, as opposed to what's documented in
   # the manuscript.
+  n_patient <- length(cancer_state)
   n_psa_meas <- length(psa_patient_index_map)
+  rand_coef <- lapply(
+    1:n_patient, function(i) {
+      generate_rand_coef(cancer_state[i], rand_coef_mean_0, rand_coef_mean_1, rand_coef_cov)
+    }
+  )
   psa_mean <- sapply(
     1:n_psa_meas, function(j) {
       rand_coef_j <- rand_coef[[psa_patient_index_map[j]]] 
@@ -139,11 +146,10 @@ simulate_psa <- function(
 }
 
 set.seed(2021)
-rand_coef <- lapply(
-  1:n, function(i) generate_rand_coef(eta.sim[i], mu_eta0, mu_eta1, Sigma)
-)
 resid_var <- 0.5 
-psa <- simulate_psa(eta.sim, X.data, Z.data, t(Beta), rand_coef, resid_var, subj_psa)
+psa <- simulate_psa(
+  eta.sim, X.data, Z.data, t(Beta), mu_eta0, mu_eta1, Sigma, resid_var, subj_psa
+)
 
 # simulate R(PGG) ---
 PGG.sim <- list()
