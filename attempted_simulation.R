@@ -1,10 +1,8 @@
 rm(list=ls())
 source('R-scripts/load_libs.R')
-base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/" #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
-setwd(base.location)
-location.of.data <- paste0(base.location, "data")
-location.of.r.scripts <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files-simulation-strongprior")
+location.of.data <- "data"
+location.of.r.scripts <- "R-scripts"
+location.of.generated.files <- "generated-files-simulation-strongprior"
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
 name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
