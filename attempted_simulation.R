@@ -112,33 +112,38 @@ set.seed(2021)
 obs.eta <- sample(1:n, length(eta.data))
 eta.data.sim <- eta.sim[obs.eta]
 
-# simulate e, b and Y ------
-set.seed(2021)
-resid_var <- 0.5   #110121
-b <- NULL
-for(i in 1:n){
-  if(eta.sim[i] <= 2){ ## use eta.bin here rather than eta
-    b.tmp = rmvnorm(1, mu_eta0, Sigma)
-  }else{
-    b.tmp = rmvnorm(1, mu_eta1, Sigma)
-  }
-  b <- rbind(b, b.tmp)
+# simulate e, b and Y ------ 
+generate_rand_coef <- function(cancer_state, mean_0, mean_1, cov) {
+  rand_coef_mean <- if (cancer_state <= 2) mean_0 else mean_1
+  rand_coef <- rmvnorm(1, rand_coef_mean, cov)
+  return(rand_coef)
 }
 
-Y.sim <- list()
-for(i in 1:length(unique(subj_psa))){
-  j <- unique(subj_psa)[i]
-  inx <- which(subj_psa == j)
-  etai <- eta.sim[j]
-  Xi <- X.data[inx, ]
-  bi <- matrix(b[j,])
-  ei <- resid_var
-  Zi <- Z.data[inx, ]
-  Yi.mean = Xi %*% Beta + Zi %*% bi
-  Yi = rmvnorm(1, Yi.mean, diag(ei, nrow = length(inx)))
-  Y.sim[[i]] <- matrix(Yi, ncol = 1)
+simulate_psa <- function(
+    cancer_state, fixed_eff_pred, rand_eff_pred, fixed_coef, rand_coef, 
+    resid_var, psa_patient_index_map
+  ) {
+  # Predictors are in the long-format, with both patient and time along the column.
+  # Incidentally, the fixed effect predictors are *not* time-dependent. And the
+  # intercept is treated as a random effect, as opposed to what's documented in
+  # the manuscript.
+  n_psa_meas <- length(psa_patient_index_map)
+  psa_mean <- sapply(
+    1:n_psa_meas, function(j) {
+      rand_coef_j <- rand_coef[[psa_patient_index_map[j]]] 
+      fixed_coef %*% fixed_eff_pred[j, ] + rand_coef_j %*% rand_eff_pred[j, ]
+    }
+  )
+  psa <- psa_mean + rnorm(n_psa_meas, sd = sqrt(resid_var))
+  return(psa)
 }
-Y.new <- do.call("rbind", Y.sim)
+
+set.seed(2021)
+rand_coef <- lapply(
+  1:n, function(i) generate_rand_coef(eta.sim[i], mu_eta0, mu_eta1, Sigma)
+)
+resid_var <- 0.5 
+psa <- simulate_psa(eta.sim, X.data, Z.data, t(Beta), rand_coef, resid_var, subj_psa)
 
 # simulate R(PGG) ---
 PGG.sim <- list()
