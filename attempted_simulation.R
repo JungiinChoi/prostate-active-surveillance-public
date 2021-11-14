@@ -70,8 +70,8 @@ source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
 
 # set param values ----
 ## prespecify rho intercept and rho slope
-rho_int  <- matrix(c(0.4, 2,4))
-rho_coef <- matrix(c(0.5, 0.8))
+cancer_intercept  <- matrix(c(0.4, 2,4))
+cancer_coef <- matrix(c(0.5, 0.8))
 ## mu_k for mean of b
 mu_eta0 <- matrix(c(1.3, 0.02))
 mu_eta1 <- matrix(c(1.5,0.1))
@@ -82,27 +82,30 @@ sigma2 <- 0.3 #variance of Y for lme
 alpha <- matrix(c(3.25, 4.58, 5.84))
 gamma <- matrix(c(0.6, -2, 0.9, 2, -8, 0.5, -0.3, 1.9, 1.3, 0.5)) # coefs for prop odds model
 
-# simulate eta------
-eta.linpred <- V.ETA.data  %*% rho_coef
-logit.cum.e1 <- rho_int[1] - eta.linpred  
-logit.cum.e2 <- rho_int[2] - eta.linpred  
-logit.cum.e3 <- rho_int[3] - eta.linpred  
-
-cum.e1 <- exp(logit.cum.e1)/(1+exp(logit.cum.e1))
-cum.e2 <- exp(logit.cum.e2)/(1+exp(logit.cum.e2))
-cum.e3 <- exp(logit.cum.e3)/(1+exp(logit.cum.e3))
-
-p.eta4 <- 1-cum.e3
-p.eta3 <- cum.e3 - cum.e2
-p.eta2 <- cum.e2 - cum.e1
-p.eta1 <- cum.e1
-set.seed(2021)
-tmp.eta <- NULL
-for(l in 1:n){ 
-  tmp <- sample(1:4, 1, replace=TRUE, prob= c(p.eta1[l], p.eta2[l], p.eta3[l], p.eta4[l]) )
-  tmp.eta <- rbind(tmp.eta, tmp)
+# simulate eta----
+simulate_cancer_state <- function(intercept, coef, predictor) {
+  pred_effect <- predictor %*% coef
+  cum_prob <- lapply(
+    1:3, function(k) {
+      logit_cum_prob <- intercept[k] - pred_effect
+      return(1 / (1 + exp(-logit_cum_prob)))
+    }
+  )
+  prob <- cbind(
+    cum_prob[[1]],
+    cum_prob[[2]] - cum_prob[[1]],
+    cum_prob[[3]] - cum_prob[[2]],
+    1 - cum_prob[[3]]
+  )
+  cancer_state <- sapply(
+    1:dim(predictor)[1], 
+    function(i) sample(1:4, size=1, prob=prob[i, ])
+  )
+  return(cancer_state)
 }
-eta.sim <- matrix(tmp.eta, ncol = 1)
+
+set.seed(2021)
+eta.sim <- simulate_cancer_state(cancer_intercept, cancer_coef, V.ETA.data)
 
 ## create missings for eta
 set.seed(2021)
@@ -218,5 +221,4 @@ jags_rhoint <- read_csv(paste0(location.of.generated.files,"/jags-prediction-rho
 jags_rhoint_1000 <- read_csv("generated-files-old/jags-prediction-rho_int-1000.csv")
 apply(jags_rhoint, 2, get_stats)
 apply(jags_rhoint_1000, 2, get_stats)
-t(rho_int)
 plot(jags_rhoint$V1, type = "l")
