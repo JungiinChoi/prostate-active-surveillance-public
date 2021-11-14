@@ -146,7 +146,16 @@ resid_var <- 0.5
 psa <- simulate_psa(eta.sim, X.data, Z.data, t(Beta), rand_coef, resid_var, subj_psa)
 
 # simulate R(PGG) ---
+simulate_pgg_prob <- function(
+    cancer_state, biopsy_pred, intercept, coef, pgg_patient_index_map
+  ) {
+  # Fill in
+  return(pgg_prob)
+}
+pgg_prob <- simulate_pgg_prob(eta.sim, V.PGG.data, alpha, gamma, subj_pgg)
+
 PGG.sim <- list()
+pgg_prob_prev <- list()
 for(i in 1:length(unique(subj_pgg))){
   j <- unique(subj_pgg)[i]
   inx <- which(subj_pgg == j)
@@ -174,14 +183,19 @@ for(i in 1:length(unique(subj_pgg))){
   p.pgg1 <- cum.t1
   
   tmp.PGG <- NULL
+  pgg_prob_i <- NULL
   for(j in 1:length(inx)){
     tmp <- sample(1:4, 1, replace=TRUE, prob= c(p.pgg1[j], p.pgg2[j], p.pgg3[j], p.pgg4[j]) )
     tmp.PGG <- rbind(tmp.PGG, tmp)
+    pgg_prob_i <- rbind(pgg_prob_i, c(p.pgg1[j], p.pgg2[j], p.pgg3[j], p.pgg4[j]))
   }
   PGG.sim[[i]] <- matrix(tmp.PGG, ncol = 1)
+  pgg_prob_prev[[i]] <- pgg_prob_i
 }
 PGG.new <- do.call("rbind", PGG.sim)
+pgg_prob_prev <- do.call(rbind, pgg_prob_prev)
 
+stopifnot(all(pgg_prob == pgg_prob_prev)) # Check that the two outputs coincide
 
 ### run model -----
 jags_data<-list(K=K, K.bin=K.bin, n=n,
