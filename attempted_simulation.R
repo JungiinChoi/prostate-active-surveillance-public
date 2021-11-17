@@ -146,13 +146,37 @@ resid_var <- 0.5
 psa <- simulate_psa(eta.sim, X.data, Z.data, t(Beta), rand_coef, resid_var, subj_psa)
 
 # simulate R(PGG) ---
-simulate_pgg_prob <- function(
-    cancer_state, biopsy_pred, intercept, coef, pgg_patient_index_map
-  ) {
-  # Fill in
+simulate_pgg_state <- function(
+  cancer_state, biopsy_pred, intercept, cov_eff_coef, cancer_eff_coef, 
+  pgg_patient_index_map
+) {
+  pred_effect <- biopsy_pred %*% cov_eff_coef
+  for (k in 1:3) {
+    grade_above_k <- as.numeric(cancer_state[pgg_patient_index_map] > k)
+    pred_effect <- pred_effect + grade_above_k * cancer_eff_coef[k]
+  }
+  cum_prob <- lapply(
+    1:3, function(k) {
+      logit_cum_prob <- intercept[k] - pred_effect
+      return(1 / (1 + exp(-logit_cum_prob)))
+    }
+  )
+  pgg_prob <- cbind(
+    cum_prob[[1]],
+    cum_prob[[2]] - cum_prob[[1]],
+    cum_prob[[3]] - cum_prob[[2]],
+    1 - cum_prob[[3]]
+  )
+  pgg_state <- sapply(
+    1:dim(biopsy_pred)[1],
+    function(i) sample(1:4, size=1, prob=pgg_prob[i, ])
+  )
   return(pgg_prob)
 }
-pgg_prob <- simulate_pgg_prob(eta.sim, V.PGG.data, alpha, gamma, subj_pgg)
+
+pgg_prob <- simulate_pgg_state(
+  eta.sim, V.PGG.data, alpha, gamma[1:7], gamma[8:10], subj_pgg
+)
 
 PGG.sim <- list()
 pgg_prob_prev <- list()
@@ -195,7 +219,7 @@ for(i in 1:length(unique(subj_pgg))){
 PGG.new <- do.call("rbind", PGG.sim)
 pgg_prob_prev <- do.call(rbind, pgg_prob_prev)
 
-stopifnot(all(pgg_prob == pgg_prob_prev)) # Check that the two outputs coincide
+stopifnot(all(abs(pgg_prob - pgg_prob_prev) < 1e-8)) # Check that the two outputs coincide
 
 ### run model -----
 jags_data<-list(K=K, K.bin=K.bin, n=n,
