@@ -1,0 +1,254 @@
+{\rtf1\ansi\ansicpg1252\cocoartf1561\cocoasubrtf200
+{\fonttbl\f0\fswiss\fcharset0 Helvetica;}
+{\colortbl;\red255\green255\blue255;}
+{\*\expandedcolortbl;;}
+\margl1440\margr1440\vieww10800\viewh8400\viewkind0
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\f0\fs24 \cf0 Yates Coley\
+rycoley@gmail.com\
+December 27, 2017\
+\
+
+\b Contents of this readme:\
+
+\b0 \
+1. Abbreviations and definitions used in code and annotation\
+2. Workflow for model estimation\
+3. Workflow for model cross-validation\
+4. Workflow for model evaluation\
+5. Libraries required\
+\
+\
+
+\b 1. Abbreviations and defintions\
+
+\b0 ## Abbreviations\
+
+\i bin
+\i0 : binary, used to indicate ordinal variables (bx or pathological grade) that are dichotomized \
+
+\i bx
+\i0 : biopsy\
+
+\i cv
+\i0 : cross validation\
+
+\i dob, dod
+\i0 : date of birth, death\
+
+\i dx
+\i0 : diagnosis \
+
+\i dt
+\i0 : date\
+
+\i ea
+\i0 : each\
+
+\i fup
+\i0 : follow-up\
+
+\i GS
+\i0 : Gleason score\
+
+\i IOP
+\i0 : informative observation process. This describes possible informative nature of biopsy and surgery decisions. Bx and surg decisions were not related to PGG in our analysis, so these components were not included in final estimation but they can be seen in the data shaping code (and are commented out in model estimation scripts)\
+
+\i LR
+\i0 : low risk (vs. very low risk) for bx dx volume criteria\
+
+\i lat
+\i0 : laterality (i.e., uni- or bilateral cancer)\
+
+\i LTF
+\i0 : loss to follow-up\
+
+\i MPC
+\i0 : maximum percent cancer involvement for any positive cores on biopsy\
+
+\i ncs
+\i0 : number of cores sampled on biopsy\
+
+\i NPC
+\i0 : number of positive cores (found on biopsy)\
+
+\i PGG
+\i0 : pathological grade group, sometimes written 
+\i PPGG
+\i0  (pathological prognostic grade group) or 
+\i PGS
+\i0  (prognostic Gleason score). (Our terminology has evolved as we\'92ve worked on this project for several years.)\
+
+\i pt
+\i0 : patient\
+
+\i rc
+\i0 : biopsy grade reclassication \
+
+\i rm
+\i0 : \'93remove\'94, an indicator variable used in data processing to mark records for removal (e.g., patient doesn\'92t meet criteria, needs to be removed)\
+
+\i RP
+\i0 : radical prostatectomy, sometimes referred to as 
+\i RRP
+\i0  (radical retropubic prostatectomy) or
+\i  surg
+\i0  (surgery)\
+
+\i subj
+\i0 : subject, a different unique patient identifier that uses patient ordering needed for JAGS run \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i \cf0 surg
+\i0 : surgery\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\i \cf0 time.int
+\i0 : time interval (for annual biopsy intervals)\
+
+\i tx
+\i0 : treatment\
+
+\i vol
+\i0 : volume\
+\
+## Definitions\
+
+\i B:
+\i0  length of saved posterior chain
+\i \
+eta
+\i0 : PGG\
+
+\i n
+\i0 : number of individuals\
+\
+\
+
+\b 2. Workflow for model estimation
+\b0 \
+## Data\
+User should start with four datasets (name given in my code):\
+1. patient-level dataset with demographic information (including date of birth, death) (\'93demo.data\'94)\
+2. biopsy-level dataset with one row per biopsy (diagnostic and follow-up biopsies included) with biopsy date and findings specified (\'93bx.data\'94)\
+3. PSA-level dataset with one row per PSA observations (including pre-diagnosis) with test date and result (\'93psa.data\'94)\
+4. treatment-level dataset with one row per treatment received. There may be multiple rows (treatments) per patient if more than one treatment were received. Treatment type and, if surgery, post-RP PGG should be noted. (\'93tx.data\'94)\
+\
+## Model estimation\
+User can run model estimation scripts in order by executing \'93to-run.R\'94. The user should amend this script to correctly reference file directories, file names, and the date of the data pull. Model estimation was performed using JAGS and R on a SGE high performance computing cluster and submitted via batch script. Each task was assigned an id \'93SGE_TASK_ID\'94, which is used to set the starting seed of model estimation (and ensure reproducitbility.)\
+\
+Each script called by to-run.R is described in turn below:\
+\
+Script first runs 
+\b data-load-check-and-shaping.R
+\b0  to check data values and shape 4 datasets into format for model estimation. Warning messages will be produced to describe data processing and any problems identified in data. Execution will only be halted for flaws that prevent model estimation from proceeding. This creates the file \'93IOP-data-shaping-work-spaced.Rdata\'94.\
+\
+Next, 
+\b data-prep-for-jags.R 
+\b0 performs further data manipulation to translate the formatted datasets into individual variables, vectors, and matrices for JAGS estimation. Variable names are shortened for brevity and generally correspond to variables and parameter labels given in Coley et al. (2017) Biometrics description of this mode.  \
+\
+Third, 
+\b argument-prep-for-jags.R
+\b0  defines the arguments needed for the jags function (data, initial parameter values, parameters to track, length and number of chains, length of burn-in, and number to thin. \
+\
+Fourth, the JAGS model is written to a txt file by sourcing 
+\b JAGS-prediction-model.R
+\b0 . \
+\
+After sourcing these scripts, to-run.R calls the jags() function to perform model estimation.\
+\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 3. Workflow for model cross-validation
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 Leave-one-out cross-validation follows a similar workflow to primary model estimation (and same data sources are needed). Run 
+\b cv-to-run.R 
+\b0 to complete data shaping and formatting, argument definition for JAGS, JAGS model definition, and model estimation via jags(). R scripts particular to cross validation have prefix 
+\b cv-
+\b0 . In 
+\b cv-data-prep-for-jags.R 
+\b0 the post-RP PGG for one patient (with true state known) is masked in order to repeat model estimation and generate a true state prediction for that individual. Renamed variables are propagated through 
+\b cv-argument-prep-for-jags.R
+\b0  and 
+\b cv-JAGS-prediction-model.R
+\b0 .\
+\
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 4. Workflow for model evaluation
+\b0 \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+
+\i For initial model assessment,
+\i0  run 
+\b get-model-estimation-assessment.R
+\b0 . This script will run the following programs (in addition to data load and prep scripts from to-run.R):\
+
+\b calibration-plot-observables.R
+\b0  generates calibration and ROC plots for biopsy grade reclassification predictions\
+
+\b convergence-diagnostics.R
+\b0  generates trace plots, cumulative quantile plots, and posterior density plots for model parameter in order to evaluate model convergence\
+
+\b psa-lme-plot.R 
+\b0 creates a scatterplot of individual-level intercept and slope estimates with credible intervals for the posterior bivariate normal distribution of mean intercept and slope for patients with PGG=1 and PGG>1.\
+\
+
+\i For predictive accuracy assessment
+\i0 , run 
+\b cv-get-predictive-accuracy.R
+\b0 . This script will calculate and save the AUC, MAE, and MSE and create calibration and ROC curve plots. \
+\
+
+\i To generate patient-level PGG and biopsy grade reclassification predictions
+\i0 , run 
+\b get-patient-predictions.R, 
+\b0  which will run the following R scripts: 
+\b patient-predictions-pgs.R
+\b0  and 
+\b patient-predictions-biopsy-reclassification.R
+\b0 .\
+\
+The following scripts provide additional model summaries and assessments presented in the paper and appendix:\
+
+\b examine-predictions-associations-eta.R
+\b0  generates a figure showing the population-level estimated probability of PGG>1 for a patient enrolled in AS given age and volume at diagnosis. This script also produces summary estimates of the PGG distribution (probability PGG=1, =2, =3, and =4) for the average age at diagnosis and low or high cancer volume at diagnosis. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 \
+examine-predictions-associations.R 
+\b0 generates plots examining the association between patient-level PGG predictions and PSA intercept and slope estimates (Figure 2-4 in PSA paper) and residuals from the mixed effects model. get-patient-predictions.R must be run first. \
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+\cf0 \
+\
+\
+\pard\tx720\tx1440\tx2160\tx2880\tx3600\tx4320\tx5040\tx5760\tx6480\tx7200\tx7920\tx8640\pardirnatural\partightenfactor0
+
+\b \cf0 5. Libraries required
+\b0 \
+Model estimation:\
+lme4\
+splines\
+gtools\
+bayesm\
+rjags\
+R2jags\
+\
+Model assessment:\
+mixtools\
+lme4\
+splines\
+gtools\
+bayesm\
+coda\
+ROCR\
+pROC\
+scales\
+grDevices}

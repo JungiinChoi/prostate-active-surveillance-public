@@ -52,6 +52,17 @@ for (index in 1:d.X) {
 
 
 ###PRIORS FOR BIOPSY OUTCOMES AND SURGERY MODEL
+#additional element(s) in each parameter vector is coefficient for class membership eta
+
+##biopsy received
+#for(index in 1:(d.U.BX+1)){nu.BX[index] ~ dnorm(0,0.01)}
+
+#negative binomial regression for NPC
+#regression coefficients
+#for(index in 1:d.V.NPC){beta.NPC[index] ~ dnorm(0, 0.01)}
+#beta.NPC[(d.V.NPC+1)] ~ dnorm(0, 0.01)T(-1,)
+#variance
+#r.NPC ~ dgamma(0.01, 0.01)
 
 ##proportional odds regression for biopsy grade
 #thresholds/intercept
@@ -67,7 +78,25 @@ for (index in (d.V.PGG + 1):(d.V.PGG + (K - 1))) {
   gamma.PGG[index] ~ dnorm(0, 0.01)T(-1,)
 }
 
+#negative binomial regression for MPC
+#regression coefficients
+#for(index in 1:d.V.MPC){beta.MPC[index] ~ dnorm(0, 0.01)}
+#beta.MPC[(d.V.MPC+1)] ~ dnorm(0, 0.01)T(-1,)
+#variance
+#r.MPC ~ dgamma(0.01, 0.01)
+
+## Laterality logistic regression
+#for(index in 1:d.V.LAT){beta.LAT[index] ~ dnorm(0,0.01)}
+#beta.LAT[(d.V.LAT+1)] ~ dnorm(0, 0.01)T(-1,)
+
+##surgery received
+#includes interaction with prior grade RC
+#for(index in 1:(d.W.SURG+2)){omega.SURG[index] ~ dnorm(0,0.01)}
+
+
+
 ###LIKELIHOOD
+
 
 ##latent variable for true cancer state
 ##proportional odds regression
@@ -111,7 +140,23 @@ for (j in 1:n_obs_psa) {
 }
 
 
+
 ### BIOPSY OUTCOMES AND SURGERY RECEIVED
+
+##logistic regression for biopsy
+#for(j in 1:n_bx){
+#	logit(p_bx[j]) <-inprod(nu.BX[1:d.U.BX], U.BX[j,1:d.U.BX]) + nu.BX[(d.U.BX+1)]*equals(eta.bin[subj_bx[j]],2)
+#	BX[j] ~ dbern(p_bx[j]) }
+
+
+##negative binomial regression for NPC
+#for(j in 1:n_npc){
+##log(NCS.offset[j]) + removed in favor of ns rep
+#  log(mu_npc[j]) <-  inprod(beta.NPC[1:d.V.NPC], V.NPC[j,1:d.V.NPC]) + beta.NPC[(d.V.NPC+1)]*step(eta[subj_npc[j]]-2)
+### + beta.NPC[(d.V.NPC+2)]*step(eta[subj_npc[j]]-3) + beta.NPC[(d.V.NPC+3)]*step(eta[subj_npc[j]]-4)
+#  p_npc[j] <- r.NPC / (r.NPC + mu_npc[j])
+#  NPC[j] ~ dnegbin(p_npc[j], r.NPC) }
+
 
 ##proportional odds regression for biopsy upgrading
 for (j in 1:n_pgg) {

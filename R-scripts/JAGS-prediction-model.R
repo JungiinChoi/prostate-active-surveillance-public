@@ -107,10 +107,10 @@ for(i in 1:n_eta_known){
   eta[i] <- eta.data[i]
   eta.bin[i] <- step(eta[i]-2) + 1} #this is for those with path reports from SURG, eta known
 
-# for(i in (n_eta_known+1):n){
-#   eta.hat[(i-n_eta_known)] ~ dcat(p_eta[i,1:K])
-#   eta[i] <- eta.hat[(i-n_eta_known)]
-#   eta.bin[i] <- step(eta[i]-2) + 1}  #for those without SURG
+for(i in (n_eta_known+1):n){
+  eta.hat[(i-n_eta_known)] ~ dcat(p_eta[i,1:K])
+  eta[i] <- eta.hat[(i-n_eta_known)]
+  eta.bin[i] <- step(eta[i]-2) + 1}  #for those without SURG
 
 
 ##linear mixed effects model for PSA
@@ -179,4 +179,4 @@ for(j in 1:n_pgg){
 #	SURG[j] ~ dbern(p_surg[j]) }
 
 
- }", fill=TRUE, file=paste(location.of.r.scripts,"JAGS-prediction-model-etaknown.txt", sep="/"))
+ }", fill=TRUE, file=paste(location.of.r.scripts,"JAGS-prediction-model.txt", sep="/"))
