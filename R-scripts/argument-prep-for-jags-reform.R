@@ -25,19 +25,31 @@
 nlevel_cancer <- 4
 nlevel_cancer_bin <- 2
 
-jags_data<-list(K=nlevel_cancer, K.bin=nlevel_cancer_bin, n=npat,
-                eta.data=cancer_data, n_eta_known=npat_cancer_known,
-                V.ETA=modmat_cancer, d.V.ETA=npred_cancer,
+# jags_data<-list(K=K, K.bin=K.bin, n=n,
+#                 eta.data=eta.data, n_eta_known=n_eta_known,
+#                 V.ETA=V.ETA.data, d.V.ETA=d.V.ETA,
+#                 
+#                 n_obs_psa=n_obs_psa, Y=Y, subj_psa=subj_psa,
+#                 Z=Z.data, X=X.data, d.Z=d.Z, d.X=d.X, I_d.Z=diag(d.Z),
+# 
+#                 PGG=PGG, n_pgg=n_pgg, subj_pgg=subj_pgg,
+#                 V.PGG=V.PGG.data, d.V.PGG=d.V.PGG#,
+# ) 
 
-                n_obs_psa=nobs_psa, Y=log_psa_data, subj_psa=psa_patient_index_map,
-                Z=modmat_ranef_psa, X=modmat_fixef_psa, d.Z=npred_ranef_psa, d.X=npred_fixef_psa, 
-                I_d.Z=diag(npred_ranef_psa),
+jags_data<-list(nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=npat,
+                cancer_data=cancer_data, npat_cancer_known=npat_cancer_known,
+                modmat_cancer=modmat_cancer, npred_cancer=npred_cancer,
+
+                nobs_psa=nobs_psa, log_psa_data=log_psa_data, psa_patient_index_map=psa_patient_index_map,
+                modmat_ranef_psa=modmat_ranef_psa, modmat_fixef_psa=modmat_fixef_psa, 
+                npred_ranef_psa=npred_ranef_psa, npred_fixef_psa=npred_fixef_psa, 
+                I_npred_ranef_psa=diag(npred_ranef_psa),
 
                # NPC=NPC, n_npc=n_npc, subj_npc=subj_npc,
                 #V.NPC=V.NPC.data, d.V.NPC=d.V.NPC, #NCS.offset=NCS.offset,
 
-                PGG=pgg_data, n_pgg=npat_pgg, subj_pgg=pgg_patient_index_map,
-                V.PGG=modmat_pgg, d.V.PGG=npred_pgg#,
+               pgg_data=pgg_data, npat_pgg=npat_pgg, pgg_patient_index_map=pgg_patient_index_map,
+               modmat_pgg=modmat_pgg, npred_pgg=npred_pgg#,
 
                 #MPC=MPC, n_mpc=n_mpc, subj_mpc=subj_mpc,
                 #V.MPC=V.MPC.data, d.V.MPC=d.V.MPC,
@@ -61,39 +73,27 @@ inits <- function() {
 cancer_intercept0 <- rnorm((nlevel_cancer-1),0,1)
 cancer_slope <- rnorm(npred_cancer, mean=0, sd=0.25)
 
-eta.hat <- pt.data$bx.pgg[is.na(cancer_data)]
+cancer_state <- pt.data$bx.pgg[is.na(cancer_data)]
 
-xi <- rlnorm(npred_ranef_psa)
+scale_ranef_mean_psa <- rlnorm(npred_ranef_psa)
 mu_raw <- as.matrix(cbind(rnorm(npred_ranef_psa),rnorm(npred_ranef_psa)))
 Tau_B_raw <- rwishart((npred_ranef_psa+1),diag(npred_ranef_psa)*var_vec)$W
-sigma_res <- min(rlnorm(1),1)
+resid_var_psa <- min(rlnorm(1),1)
 
-beta <- rnorm(npred_fixef_psa)
+fixef_coefficient <- rnorm(npred_fixef_psa)
 
-#nu.BX <- rnorm((d.U.BX+1), mean=0, sd=0.1)
 
-#beta.NPC <- rnorm((d.V.NPC + 1), mean=0, sd=0.5 )
-#beta.NPC[(d.V.NPC+1)] <- abs(beta.NPC[(d.V.NPC+1)])
-#r.NPC <- runif(1,1,10)
+pgg_intercept0 <- rnorm((nlevel_cancer-1),0,1)
+pgg_slope <- rnorm((npred_pgg+(nlevel_cancer-1)),mean=0,sd=0.25)
+pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))] <- abs(fixef_coefficient[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
 
-alpha0 <- rnorm((nlevel_cancer-1),0,1)
-gamma.PGG <- rnorm((npred_pgg+(nlevel_cancer-1)),mean=0,sd=0.25)
-gamma.PGG[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))] <- abs(gamma.PGG[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
-
-#beta.MPC <- rnorm((d.V.MPC + 1), mean=0, sd=0.5 )
-#beta.MPC[(d.V.MPC+1)] <- abs(beta.MPC[(d.V.MPC+1)])
-#r.MPC <- runif(1,1,10)
-
-#beta.LAT <- rnorm((d.V.LAT + 1), mean=0, sd=0.25 )
-#beta.LAT[(d.V.LAT+1)] <- abs(beta.LAT[(d.V.LAT+1)])
-
-#omega.SURG <-c (rnorm((d.W.SURG+2), mean=0, sd=0.01))
 
 list(cancer_intercept0=cancer_intercept0, cancer_slope=cancer_slope, #cat_int=cat_int,
-     eta.hat=eta.hat,
-     xi=xi, mu_raw=mu_raw, Tau_B_raw=Tau_B_raw, sigma_res=sigma_res, beta=beta,
+     cancer_state=cancer_state,
+     scale_ranef_mean_psa=scale_ranef_mean_psa, mu_raw=mu_raw, Tau_B_raw=Tau_B_raw, 
+     resid_var_psa=resid_var_psa, fixef_coefficient=fixef_coefficient,
  #    beta.NPC=beta.NPC, r.NPC=r.NPC,
-     alpha0=alpha0, gamma.PGG=gamma.PGG#,
+ pgg_intercept0=pgg_intercept0, pgg_slope=pgg_slope#,
 #     beta.MPC=beta.MPC, r.MPC=r.MPC,
 #     beta.LAT=beta.LAT#,
  #    nu.BX=nu.BX, omega.SURG=omega.SURG
@@ -104,14 +104,26 @@ list(cancer_intercept0=cancer_intercept0, cancer_slope=cancer_slope, #cat_int=ca
 
 
 ### 3. Define parameters to be tracked
+#reformat Yate's code
+## rho_int -> cancer_intercept
+## rho_coef -> cancer_slope
+## eta.hat -> cancer_state
+## xi -> scale_ranef_mean_psa
+## mu_int -> ranef_intercept; mu_slope  -> ranef_slope (mean of)
+## sigma_int -> ranef_var_intercept; sigma_slope -> ranef_var_slope; cov_int_slope -> ranef_cov
+## sigma_res ->  resid_var_psa
+## b.vec -> ranef
+## beta -> fixef_coefficient
+## alpha -> pgg_intercept
+## gamma.PGG -> pgg_slope
 params <- c("cancer_intercept", "cancer_slope",
-            "eta.hat",
-            "xi", "mu_int", "mu_slope",
-            "sigma_int", "sigma_slope", "sigma_res",  "cov_int_slope",
-            "b.vec",
-            "beta",
+            "cancer_state",
+            "scale_ranef_mean_psa", "ranef_intercept", "ranef_slope",
+            "ranef_var_intercept", "ranef_var_slope", "ranef_cov","resid_var_psa",  
+            "ranef",
+            "fixef_coefficient",
 #            "beta.NPC", "r.NPC", #"mu_npc",
-            "alpha", "gamma.PGG"#, #"p_rc",
+            "pgg_intercept", "pgg_slope"#, #"p_rc",
 #            "beta.MPC", "r.MPC", #"mu_mpc",
 #            "beta.LAT"#, #"p_lat"
             #"nu.BX", #"p_bx",
