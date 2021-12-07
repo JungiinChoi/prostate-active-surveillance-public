@@ -2,7 +2,7 @@ rm(list=ls())
 source('R-scripts/load_libs.R')
 location.of.data <- "data"
 location.of.r.scripts <- "R-scripts"
-location.of.generated.files <- "generated-files-simulation-strongprior"
+location.of.generated.files <- "generated-files-simulation-aki"
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
 name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
@@ -174,7 +174,7 @@ simulate_pgg_state <- function(
   return(pgg_prob)
 }
 
-pgg_prob <- simulate_pgg_state(
+pgg_prob<- simulate_pgg_state(
   eta.sim, V.PGG.data, alpha, gamma[1:7], gamma[8:10], subj_pgg
 )
 
@@ -226,10 +226,10 @@ jags_data<-list(K=K, K.bin=K.bin, n=n,
                 eta.data=eta.data.sim, n_eta_known=n_eta_known,
                 V.ETA=V.ETA.data, d.V.ETA=d.V.ETA,
                 
-                n_obs_psa=n_obs_psa, Y=Y.new[,1], subj_psa=subj_psa,
+                n_obs_psa=n_obs_psa, Y=psa, subj_psa=subj_psa,
                 Z=Z.data, X=X.data, d.Z=d.Z, d.X=d.X, I_d.Z=diag(d.Z),
                 
-                PGG=PGG.new[,1], n_pgg=n_pgg, subj_pgg=subj_pgg,
+                PGG=pgg_state, n_pgg=n_pgg, subj_pgg=subj_pgg,
                 V.PGG=V.PGG.data, d.V.PGG=d.V.PGG
                 
 )
@@ -237,7 +237,7 @@ jags_data<-list(K=K, K.bin=K.bin, n=n,
 seed = 2021
 set.seed(seed)
 outj<-jags(jags_data, inits=inits, parameters.to.save=params,
-           model.file=paste(location.of.r.scripts, "JAGS-prediction-model-simp.txt", sep="/"),
+           model.file=paste(location.of.r.scripts, "JAGS-prediction-model.txt", sep="/"),
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
 for(j in 1:length(out$sims.list)){
@@ -248,7 +248,7 @@ for(j in 1:length(out$sims.list)){
 
 ## compare results
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
-jags_beta <- read_csv("generated-files/jags-prediction-beta-2021.csv")
+jags_beta <- read_csv("generated-files-simulation-aki/jags-prediction-beta-2021.csv")
 apply(jags_beta, 2, get_stats)
 t(Beta)
 
@@ -260,8 +260,35 @@ jags_alpha <-read_csv(paste0(location.of.generated.files,"/jags-prediction-alpha
 apply(jags_alpha, 2, get_stats)
 t(alpha)
 
-jags_rhoint <- read_csv(paste0(location.of.generated.files,"/jags-prediction-rho_int-2021.csv")
-jags_rhoint_1000 <- read_csv("generated-files-old/jags-prediction-rho_int-1000.csv")
+jags_rhoint <- read_csv(paste0(location.of.generated.files,"/jags-prediction-rho_int-2021.csv"))
 apply(jags_rhoint, 2, get_stats)
-apply(jags_rhoint_1000, 2, get_stats)
-plot(jags_rhoint$V1, type = "l")
+t(cancer_intercept)
+
+
+jags_rhocoef<- read_csv(paste0(location.of.generated.files,"/jags-prediction-rho_coef-2021.csv"))
+apply(jags_rhocoef, 2, get_stats)
+t(cancer_coef)
+get_lwr <- function(x){a <- quantile(x, c(0.025)); b<-mean(x); return(a)}
+get_upr <- function(x){a <- quantile(x, c(0.975)); b<-mean(x); return(a)}
+jags_etahat<- read_csv(paste0(location.of.generated.files,"/jags-prediction-eta.hat-2021.csv"))
+etameans <- apply(jags_etahat[,-1], 2, mean)
+eta_est1 <- apply(jags_etahat[,-1] == 1, 1, mean)
+mean(eta_est1)
+eta_est2 <- apply(jags_etahat[,-1] == 2, 1, mean)
+mean(eta_est2)
+eta_est3 <- apply(jags_etahat[,-1] == 3, 1, mean)
+mean(eta_est3)
+eta_est4 <- apply(jags_etahat[,-1] == 4, 1, mean)
+hist(eta_est4)
+
+# sum(etalwr > 2)/length(etalwr)
+# sum(etaupr > 2)/length(etaupr)
+c(sum(eta.sim == 1)/length(eta.sim),
+sum(eta.sim == 2)/length(eta.sim),
+sum(eta.sim == 3)/length(eta.sim),
+sum(eta.sim == 4)/length(eta.sim))
+#sum(eta.data > 1)/length(eta.data)
+
+
+sim_int <- rnorm(10000, 0, 100)
+hist(exp(sim_int)/(1+exp(sim_int)))

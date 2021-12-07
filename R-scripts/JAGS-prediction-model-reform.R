@@ -17,22 +17,26 @@ cat("model {
 
 #flat priors for proportional odds model intercepts and coefficients with ordinal eta as outcome
 #thresholds/intercept 
+guassian_prior_sd <- 10
+guassian_prior_prec <- pow(guassian_prior_sd, -2)
 for (k in 1:(nlevel_cancer - 1)) {
-  cancer_intercept0[k] ~ dnorm(0, 0.01)
+  cancer_intercept0[k] ~ dnorm(0, guassian_prior_prec)
 }
 cancer_intercept[1:(nlevel_cancer - 1)] <- sort(cancer_intercept0)
+
 #proportional odds coefficients
 for (index in 1:npred_cancer) {
-  cancer_slope[index] ~ dnorm(0, 0.01)
+  cancer_slope[index] ~ dnorm(0, guassian_prior_prec)
 }
 
 ###PRIORS FOR PSA MIXED MODEL
 
 #model correlated random effects distribution
+scale_prior_range <- 100
 for (index in 1:npred_ranef_psa) {
-	scale_ranef_mean_psa[index] ~ dunif(0,100)
+	scale_ranef_mean_psa[index] ~ dunif(0,scale_prior_range)
 	for(k in 1:nlevel_cancer_bin) {
-		mu_raw[index, k] ~ dnorm(0, 0.01)
+		mu_raw[index, k] ~ dnorm(0, guassian_prior_prec)
 		mu[index, k] <- scale_ranef_mean_psa[index] * mu_raw[index,k]
 	}  
 }
@@ -53,12 +57,13 @@ rho_int_slope <- Sigma_B_raw[1, 2] / sqrt(Sigma_B_raw[1, 1] * Sigma_B_raw[2, 2])
 ranef_cov <- rho_int_slope * ranef_var_intercept * ranef_var_slope
 
 #residual variance, independent of correlated random effects, same across classes
-resid_var_psa ~ dunif(0, 1)
-tau_res <- pow(resid_var_psa, -2)
+resid_sd_prior_range <- 1
+resid_sd_psa ~ dunif(0, resid_sd_prior_range)
+tau_res_prec <- pow(resid_sd_psa, -2)
 
 #fixed effects
 for(index in 1:npred_fixef_psa) {
-	fixef_coefficient[index] ~ dnorm(0, 0.01)
+	fixef_coefficient[index] ~ dnorm(0, gaussian_prior_prec)
 }
 
 
@@ -66,16 +71,16 @@ for(index in 1:npred_fixef_psa) {
 ##proportional odds regression for biopsy grade
 #thresholds/intercept
 for(k in 1:(nlevel_cancer-1)) {
-  pgg_intercept0[k] ~ dnorm(0,0.01)
+  pgg_intercept0[k] ~ dnorm(0,gaussian_prior_prec)
 }
 pgg_intercept[1:(nlevel_cancer - 1)] <- sort(pgg_intercept0)
 #proportional odds coefficients
 for(index in 1:npred_pgg) {
-  pgg_slope[index] ~ dnorm(0,0.01)
+  pgg_slope[index] ~ dnorm(0,gaussian_prior_prec)
 }
 
 for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
-  pgg_slope[index] ~ dnorm(0, 0.01)T(-1,)
+  pgg_slope[index] ~ dnorm(0, gaussian_prior_prec)T(-1,)
 }
 
 
