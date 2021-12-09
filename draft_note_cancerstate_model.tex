@@ -1,0 +1,61 @@
+\documentclass{article}
+\usepackage[utf8]{inputenc}
+\usepackage{amsmath}
+\usepackage[margin=2cm]{geometry}
+\newcommand{\given}{\, | \,}
+\begin{document}
+	$\bullet$ Sequential logistic regression model for $\left\{
+	\begin{array}{lll}
+		\eta_i = 1 & \text{or} & \eta_i \geq 2\\
+		\eta_i = 2 & \text{or}& \eta_i \geq 3 \\
+		\eta_i = 3 & \text{or}& \eta_i = 4 \\
+	\end{array}
+	\right.$ 
+	to replace proportional odds model for $\eta_i$:
+	\\ 
+	\\
+	$\left\{
+	\begin{array}{l}
+		\text{logit}  \ P(\eta_i = 1 \given \eta_i \geq 1, x_i,\alpha_{1}, \beta_{1}) = \alpha_{1} - x_i^T \beta_{1} \\
+		\\
+		\text{logit}  \ P(\eta_i = 2 \given \eta_i \geq 2,x_i, \alpha_{2}, \beta_{2}) = \alpha_{2} - x_i^T \beta_{2} \\
+		\\
+		\text{logit}  \ P(\eta_i = 3 \given \eta_i \geq 3,x_i, \alpha_{3}, \beta_{3}) =  \alpha_{3} - x_i^T \beta_{3} \\
+		\\
+		P(\eta_i = 4 \given x_i, \alpha_{1,2,3},\beta_{1,2,3}) = 
+		[1-P(\eta_i = 1 \given \eta_i \geq 1, x_i, \alpha_{1}, \beta_{1})]  
+		[1-P(\eta_i = 2 \given \eta_i \geq 2,x_i, \alpha_{2},	\beta_{2})] 
+		[1-P(\eta_i = 3 \given \eta_i \geq 3,x_i, \alpha_{3},\beta_{3})]		
+	\end{array}
+	\right.$ 	\\
+	\\
+	\\
+	$\Rightarrow$ $P(\eta_i = j \given \eta_i \geq j, x_i, \alpha_j,\beta_j) = \frac{1}{1+exp(\alpha_j - x_i^T \beta_{j})}$ for $j \in \{1,2,3\}$
+\\
+\\
+
+
+$\bullet$ Conditional model for $pgg_i \given \eta_i = j, z_i, \gamma_j$ 
+\\
+\\
+$\text{logit} \ P(pgg_i = j \given \eta_i = j, z_i, \gamma_1) = z_i^T \gamma_1$
+\\
+\\
+$\text{logit} \ P( |pgg_i - \eta_i| = 1 \given \eta_i = j, z_i, \gamma_2)= z_i^T \gamma_2$
+\\
+\\
+$\text{logit} \ P( |pgg_i - \eta_i| = 2 \given \eta_i = j, z_i, \gamma_3)= z_i^T \gamma_3$ if needed
+\\
+
+Example: for $j = 3$
+\\
+$\text{logit} \ P(pgg_i = 3 \given \eta_i = 3, z_i, \gamma_1) = z_i^T \gamma_1$
+\\
+\\
+$\text{logit} \ P( pgg_i =1  \given \eta_i = 3, z_i, \gamma_2)= z_i^T \gamma_2$
+\\
+\\
+$\ P( pgg_i = 2  \text{ or } 4 \given \eta_i = 3, z_i, \gamma_1, \gamma_2)= [1-P(pgg_i = 3 \given \eta_i = 3,z_i, \gamma_1)][1-P(pgg_i = 1 \given \eta_i = 3,z_i, \gamma_2)]$
+\\
+
+\end{document}
