@@ -1,13 +1,13 @@
 \documentclass{article}
 \usepackage[utf8]{inputenc}
 \usepackage{amsmath}
-\usepackage[margin=2cm]{geometry}
+\usepackage[margin=1cm]{geometry}
 \newcommand{\given}{\, | \,}
 \begin{document}
 	$\bullet$ Sequential logistic regression model for $\left\{
 	\begin{array}{lll}
-		\eta_i = 1 & \text{or} & \eta_i \geq 2\\
-		\eta_i = 2 & \text{or}& \eta_i \geq 3 \\
+		\eta_i = 1 & \text{or} & \eta_i > 1\\
+		\eta_i = 2 & \text{or}& \eta_i > 2 \\
 		\eta_i = 3 & \text{or}& \eta_i = 4 \\
 	\end{array}
 	\right.$ 
@@ -16,22 +16,50 @@
 	\\
 	$\left\{
 	\begin{array}{l}
-		\text{logit}  \ P(\eta_i = 1 \given \eta_i \geq 1, x_i,\alpha_{1}, \beta_{1}) = \alpha_{1} - x_i^T \beta_{1} \\
+		\text{logit}  \ P(\eta_i = 1 \given x_i,\alpha_{1}, \beta_{1}) = \alpha_{1} - x_i^T \beta_{1} \\
 		\\
 		\text{logit}  \ P(\eta_i = 2 \given \eta_i \geq 2,x_i, \alpha_{2}, \beta_{2}) = \alpha_{2} - x_i^T \beta_{2} \\
 		\\
 		\text{logit}  \ P(\eta_i = 3 \given \eta_i \geq 3,x_i, \alpha_{3}, \beta_{3}) =  \alpha_{3} - x_i^T \beta_{3} \\
-		\\
-		P(\eta_i = 4 \given x_i, \alpha_{1,2,3},\beta_{1,2,3}) = 
-		[1-P(\eta_i = 1 \given \eta_i \geq 1, x_i, \alpha_{1}, \beta_{1})]  
-		[1-P(\eta_i = 2 \given \eta_i \geq 2,x_i, \alpha_{2},	\beta_{2})] 
-		[1-P(\eta_i = 3 \given \eta_i \geq 3,x_i, \alpha_{3},\beta_{3})]		
 	\end{array}
 	\right.$ 	\\
 	\\
 	\\
-	$\Rightarrow$ $P(\eta_i = j \given \eta_i \geq j, x_i, \alpha_j,\beta_j) = \frac{1}{1+exp(\alpha_j - x_i^T \beta_{j})}$ for $j \in \{1,2,3\}$
-\\
+	$\Rightarrow$ Likelihood:
+	\\
+	\\
+	$P(\eta_i = 1 \given x_i, \alpha_1,\beta_1) = \frac{exp(\alpha_1 - x_i^T \beta_{1})}{1+exp(\alpha_1 - x_i^T \beta_{1})}$ 
+\begin{flalign*}
+		P(\eta_i = 2 \given x_i, \alpha_{1,2}, \beta_{1,2}) 
+		&= P(\eta_i > 1 \given  x_i, \alpha_1,\beta_1)P(\eta_i = 2 \given \eta_i > 1, x_i, \alpha_2,\beta_2)  &\\
+		&= (1-P(\eta_i = 1 \given ...))(P(\eta_i = 2 \given \eta_i > 1,...)) &\\
+		&=\frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} \frac{exp(\alpha_2 - x_i^T \beta_{2})}{1+exp(\alpha_2 - x_i^T \beta_{2})}
+\end{flalign*}
+\begin{flalign*}
+	P(\eta_i = 3 \given x_i, \alpha_{1,2,3}, \beta_{1,2,3}) 
+	&= P(\eta_i > 1 \given  x_i, \alpha_1,\beta_1)P(\eta_i > 2 \given \eta_i > 1, x_i, \alpha_2,\beta_2)P(\eta_i = 3 \given \eta_i > 2, x_i, \alpha_3,\beta_3)   &\\
+	&= (1-P(\eta_i = 1 \given ...))(1-P(\eta_i = 2 \given \eta_i > 1,...)) P(\eta_i = 3 \given \eta_i > 2,...)&\\
+	&=\frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} 
+	\frac{1}{1+exp(\alpha_2 - x_i^T \beta_{2})}
+	\frac{exp(\alpha_3 - x_i^T \beta_{3})}{1+exp(\alpha_3 - x_i^T \beta_{3})}
+\end{flalign*}
+
+\begin{flalign*}
+	P(\eta_i = 4 \given x_i, \alpha_{1,2,3}, \beta_{1,2,3}) 
+	&= 1- P(\eta_i = 1 \given x_i, \alpha_{1}, \beta_{1}) -P(\eta_i = 2 \given x_i, \alpha_{2}, \beta_{2}) -P(\eta_i = 3 \given x_i, \alpha_{3}, \beta_{3}) &\\
+	&=1- \frac{exp(\alpha_1 - x_i^T \beta_{1})}{1+exp(\alpha_1 - x_i^T \beta_{1})} - \frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} \frac{exp(\alpha_2 - x_i^T \beta_{2})}{1+exp(\alpha_2 - x_i^T \beta_{2})} &\\
+	& - \frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} 
+	\frac{1}{1+exp(\alpha_2 - x_i^T \beta_{2})}
+	\frac{exp(\alpha_3 - x_i^T \beta_{3})}{1+exp(\alpha_3 - x_i^T \beta_{3})} &\\
+	&=\frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} - \frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} \frac{exp(\alpha_2 - x_i^T \beta_{2})}{1+exp(\alpha_2 - x_i^T \beta_{2})} &\\
+	&- \frac{1}{1+exp(\alpha_1 - x_i^T \beta_{1})} 
+	\frac{1}{1+exp(\alpha_2 - x_i^T \beta_{2})}
+	\frac{exp(\alpha_3 - x_i^T \beta_{3})}{1+exp(\alpha_3 - x_i^T \beta_{3})} 
+\end{flalign*}
+%	$P(\eta_i = 4 \given x_i, \alpha_{1,2,3},\beta_{1,2,3}) = 
+%	[1-P(\eta_i = 1 \given \eta_i \geq 1, x_i, \alpha_{1}, \beta_{1})]  
+%	[1-P(\eta_i = 2 \given \eta_i \geq 2,x_i, \alpha_{2},	\beta_{2})] 
+%	[1-P(\eta_i = 3 \given \eta_i \geq 3,x_i, \alpha_{3},\beta_{3})]$
 \\
 
 
