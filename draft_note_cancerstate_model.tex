@@ -28,7 +28,9 @@
 	$\Rightarrow$ Likelihood:
 	\\
 	\\
-	$P(\eta_i = 1 \given x_i, \alpha_1,\beta_1) = \frac{exp(\alpha_1 - x_i^T \beta_{1})}{1+exp(\alpha_1 - x_i^T \beta_{1})}$ 
+\begin{flalign*}
+	P(\eta_i = 1 \given x_i, \alpha_1,\beta_1) &= \frac{exp(\alpha_1 - x_i^T \beta_{1})}{1+exp(\alpha_1 - x_i^T \beta_{1})} &\\
+\end{flalign*}
 \begin{flalign*}
 		P(\eta_i = 2 \given x_i, \alpha_{1,2}, \beta_{1,2}) 
 		&= P(\eta_i > 1 \given  x_i, \alpha_1,\beta_1)P(\eta_i = 2 \given \eta_i > 1, x_i, \alpha_2,\beta_2)  &\\
@@ -69,21 +71,34 @@ $\bullet$ Conditional model for $pgg_i \given \eta_i = j, z_i, \gamma_j$
 $\text{logit} \ P(pgg_i = j \given \eta_i = j, z_i, \gamma_1) = z_i^T \gamma_1$
 \\
 \\
-$\text{logit} \ P( |pgg_i - \eta_i| = 1 \given \eta_i = j, z_i, \gamma_2)= z_i^T \gamma_2$
+$\text{logit} \ P( |pgg_i - \eta_i| = 1 \given pgg_i \neq \eta_i = j, z_i, \gamma_2)= z_i^T \gamma_2$
 \\
 \\
-$\text{logit} \ P( |pgg_i - \eta_i| = 2 \given \eta_i = j, z_i, \gamma_3)= z_i^T \gamma_3$ if needed
+$\text{logit} \ P( |pgg_i - \eta_i| = 2 \given pgg_i \neq \eta_i = j, pgg_i \in \{\eta_i + 2, \eta_i-2\},z_i, \gamma_3)= z_i^T \gamma_3$ if needed
 \\
 
 Example: for $j = 3$
 \\
+\\
 $\text{logit} \ P(pgg_i = 3 \given \eta_i = 3, z_i, \gamma_1) = z_i^T \gamma_1$
 \\
 \\
-$\text{logit} \ P( pgg_i =1  \given \eta_i = 3, z_i, \gamma_2)= z_i^T \gamma_2$
+$\text{logit} \ P( pgg_i =2 \text{ or } pgg_i = 4  \given pgg_i \neq \eta_i = 3, z_i, \gamma_2)= z_i^T \gamma_2$
 \\
 \\
-$\ P( pgg_i = 2  \text{ or } 4 \given \eta_i = 3, z_i, \gamma_1, \gamma_2)= [1-P(pgg_i = 3 \given \eta_i = 3,z_i, \gamma_1)][1-P(pgg_i = 1 \given \eta_i = 3,z_i, \gamma_2)]$
+$\Rightarrow$ Likelihood:
 \\
+\\
+\begin{flalign*}
+	P(pgg_i = 3 \given \eta_i = 3, z_i, \gamma_1) &= \frac{exp(z_i^T \gamma_{1})}{1+exp(z_i^T \gamma_{1})} &\\
+\end{flalign*}
+\begin{flalign*}
+	P(pgg_i = 2 \text{ or } pgg_i = 4 \given \eta_i = 3, z_i, \gamma_1, \gamma_2) &= P(pgg_i \neq 3 \given ...)P(pgg_i = 2 \text{ or } 4 \given pgg_i \neq \eta_i = 3,...) &\\
+	&=\frac{1}{1+exp(z_i^T \gamma_{1})} \frac{exp(z_i^T \gamma_{2})}{1+exp(z_i^T \gamma_{1})}&\\
+\end{flalign*}
+\begin{flalign*}
+	P(pgg_i = 1 \given \eta_i = 3, z_i, \gamma_1, \gamma_2) &= 1-	P(pgg_i = 3 \given \eta_i = 3, z_i, \gamma_1) - 	P(pgg_i = 2 \text{ or } pgg_i = 4 \given \eta_i = 3, z_i, \gamma_1, \gamma_2)&\\
+	&=1-\frac{exp(z_i^T \gamma_{1})}{1+exp(z_i^T \gamma_{1})} -\frac{1}{1+exp(z_i^T \gamma_{1})} \frac{exp(z_i^T \gamma_{2})}{1+exp(z_i^T \gamma_{1})}&\\
+\end{flalign*}
 
 \end{document}
