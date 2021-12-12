@@ -100,5 +100,10 @@ $\Rightarrow$ Likelihood:
 	P(pgg_i = 1 \given \eta_i = 3, z_i, \gamma_1, \gamma_2) &= 1-	P(pgg_i = 3 \given \eta_i = 3, z_i, \gamma_1) - 	P(pgg_i = 2 \text{ or } pgg_i = 4 \given \eta_i = 3, z_i, \gamma_1, \gamma_2)&\\
 	&=1-\frac{exp(z_i^T \gamma_{1})}{1+exp(z_i^T \gamma_{1})} -\frac{1}{1+exp(z_i^T \gamma_{1})} \frac{exp(z_i^T \gamma_{2})}{1+exp(z_i^T \gamma_{1})}&\\
 \end{flalign*}
-
+\\
+\\
+$\bullet$ Questions
+\begin{enumerate}
+	\item Order of fitting matters? What are reasons to fit $P(pgg =  2 or 4 \given \eta = 3)$ then $P(pgg =  1 \given \eta = 3)$ besides the interpretation of coefficients? 
+\end{enumerate}
 \end{document}
