@@ -17,7 +17,7 @@ rm(list=ls())
 
 ### 2. Define directories, file names
 #### These will have to be adjusted by the user
-base.location <- '~/Downloads/muffadal-prostate-active-surveillance/' #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
+base.location <- '~/Downloads/prostate-active-surveillance-vDaan/' #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
 location.of.generated.files <- paste0(base.location, "generated-files")

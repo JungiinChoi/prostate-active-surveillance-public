@@ -1,0 +1,148 @@
+#reformat Yate's code
+## rho_int -> cancer_intercept
+## rho_coef -> cancer_slope
+## eta.hat -> cancer_state
+## xi -> scale_ranef_mean_psa
+## mu_int -> ranef_intercept; mu_slope  -> ranef_slope
+## sigma_int -> ranef_var_intercept; sigma_slope -> ranef_var_slope; cov_int_slope -> ranef_cov
+## sigma_res ->  resid_var_psa
+## b.vec -> ranef
+## beta -> fixef_coefficient
+## alpha -> pgg_intercept
+## gamma.PGG -> pgg_slope
+cat("model {
+
+
+###PRIOR PARAMETERS --------
+
+#Flat priors for proportional odds model intercepts and coefficients with ordinal eta as outcome, thresholds/intercept 
+guassian_prior_sd <- 10
+guassian_prior_prec <- pow(guassian_prior_sd, -2)
+for (k in 1:(nlevel_cancer - 1)) {
+  cancer_intercept0[k] ~ dnorm(0, guassian_prior_prec)
+}
+for (index in 1:npred_cancer) {       #proportional odds coefficients
+  cancer_slope[index] ~ dnorm(0, guassian_prior_prec)
+}
+
+#for psa mixed model correlated random effects distribution
+unif_prior_range <- 100
+for (index in 1:npred_ranef_psa) {
+	scale_ranef_mean_psa[index] ~ dunif(0,unif_prior_range)
+	for(k in 1:nlevel_cancer_bin) {
+		mu_raw[index, k] ~ dnorm(0, guassian_prior_prec)
+		mu[index, k] <- scale_ranef_mean_psa[index] * mu_raw[index,k]
+	}  
+}
+
+#same covariance matrix (Sigma_B) across latent classes
+Tau_B_raw ~ dwish(I_npred_ranef_psa[,], (npred_ranef_psa+1))
+Sigma_B_raw[1:npred_ranef_psa, 1:npred_ranef_psa] <- inverse(Tau_B_raw[1:npred_ranef_psa, 1:npred_ranef_psa])
+for (index in 1:npred_ranef_psa) {
+		sigma[index] <- scale_ranef_mean_psa[index] * sqrt(Sigma_B_raw[index, index]) 
+}
+
+
+#residual variance, independent of correlated random effects, same across classes
+resid_sd_prior_range <- 1
+resid_sd_psa ~ dunif(0, resid_sd_prior_range)
+tau_res_prec <- pow(resid_sd_psa, -2)
+
+#fixed effects
+for(index in 1:npred_fixef_psa) {
+	fixef_coefficient[index] ~ dnorm(0, gaussian_prior_prec)
+}
+
+
+#proportional odds regression for biopsy grade, thresholds/intercept
+for(k in 1:(nlevel_cancer-1)) {
+  pgg_intercept0[k] ~ dnorm(0,gaussian_prior_prec)
+}
+for(index in 1:npred_pgg) {
+  pgg_slope[index] ~ dnorm(0,gaussian_prior_prec)
+}
+for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
+  pgg_slope[index] ~ dnorm(0, gaussian_prior_prec)T(-1,)
+}
+
+###GENERATED PARAMETERS --------
+
+cancer_intercept[1:(nlevel_cancer - 1)] <- sort(cancer_intercept0) #latent class proportional odds intercept 
+
+for(k in 1:nlevel_cancer_bin) { #psa model random effect mean
+	ranef_intercept[k] <- mu[1, k]
+	ranef_slope[k] <- mu[2, k]
+}
+
+ranef_var_intercept <- sigma[1] #psa model random effect variance covaraince
+ranef_var_slope <- sigma[2]
+rho_int_slope <- Sigma_B_raw[1, 2] / sqrt(Sigma_B_raw[1, 1] * Sigma_B_raw[2, 2])
+ranef_cov <- rho_int_slope * ranef_var_intercept * ranef_var_slope
+
+pgg_intercept[1:(nlevel_cancer - 1)] <- sort(pgg_intercept0) #pgg proportional odds intercept 
+
+
+###LIKELIHOOD --------------------
+
+##latent variable for true cancer state
+##proportional odds regression
+for(i in 1:npat) {
+  lin.pred.eta[i] <- inprod(cancer_slope[1:npred_cancer], modmat_cancer[i,1:npred_cancer])
+  logit(cuml.p_eta[i, 1]) <- cancer_intercept[1] - lin.pred.eta[i]
+  p_eta[i, 1] <- cuml.p_eta[i, 1]
+  for(k in 2:(nlevel_cancer-1)) {
+    logit(cuml.p_eta[i, k]) <- cancer_intercept[k] - lin.pred.eta[i]
+    p_eta[i,k] <- cuml.p_eta[i, k] - cuml.p_eta[i, (k-1)]
+    }
+  p_eta[i, nlevel_cancer] <- 1 - cuml.p_eta[i, (nlevel_cancer-1)] 
+}
+
+for(i in 1:npat_cancer_known) {
+  cancer_data[i] ~ dcat(p_eta[i, 1:nlevel_cancer])
+  eta[i] <- cancer_data[i]
+  eta.bin[i] <- step(eta[i]-2) + 1
+} #this is for those with path reports from SURG, eta known
+
+for(i in (npat_cancer_known+1):npat) {
+  cancer_state[(i-npat_cancer_known)] ~ dcat(p_eta[i, 1:nlevel_cancer])
+  eta[i] <- cancer_state[(i-npat_cancer_known)]
+  eta.bin[i] <- step(eta[i]-2) + 1
+}  #for those without SURG
+
+
+##linear mixed effects model for PSA
+#generate random intercept and slope for individual given latent class
+for (i in 1:npat) {
+	B_raw[i, 1:npred_ranef_psa] ~ dmnorm(mu_raw[1:npred_ranef_psa, eta.bin[i]], Tau_B_raw[1:npred_ranef_psa, 1:npred_ranef_psa])
+	for(index in 1:npred_ranef_psa) {
+	  ranef[i, index] <- scale_ranef_mean_psa[index] * B_raw[i, index]
+	} 
+}
+
+#fit LME
+for(j in 1:nobs_psa){
+	mu_obs_psa[j] <- inprod(ranef[psa_patient_index_map[j], 1:npred_ranef_psa], modmat_ranef_psa[j, 1:npred_ranef_psa]) + inprod(fixef_coefficient[1:npred_fixef_psa], modmat_fixef_psa[j,1:npred_fixef_psa])
+	log_psa_data[j] ~ dnorm(mu_obs_psa[j], tau_res_prec) 
+}
+
+
+
+### BIOPSY OUTCOMES AND SURGERY RECEIVED
+
+##proportional odds regression for biopsy upgrading
+for(j in 1:npat_pgg) {
+	lin.pred[j] <- inprod(pgg_slope[1:npred_pgg], modmat_pgg[j,1:npred_pgg]) + 
+	pgg_slope[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
+	pgg_slope[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
+	pgg_slope[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)
+	logit(cuml.p_rc[j, 1]) <- pgg_intercept[1] - lin.pred[j]
+	p_rc[j,1] <- cuml.p_rc[j,1]
+	for(k in 2:(nlevel_cancer-1)) {
+		logit(cuml.p_rc[j,k]) <- pgg_intercept[k] - lin.pred[j]
+		p_rc[j,k] <- cuml.p_rc[j,k] - cuml.p_rc[j,(k-1)] 
+	}
+	p_rc[j,nlevel_cancer] <- 1 - cuml.p_rc[j, (nlevel_cancer-1)]
+	pgg_data[j] ~ dcat(p_rc[j, 1:nlevel_cancer]) 
+}
+
+ }", fill=TRUE, file=paste(location.of.r.scripts,"JAGS-prediction-model-reform.txt", sep="/"))
