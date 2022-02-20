@@ -85,7 +85,7 @@ fixef_coefficient <- rnorm(npred_fixef_psa)
 
 pgg_intercept0 <- rnorm((nlevel_cancer-1),0,1)
 pgg_slope <- rnorm((npred_pgg+(nlevel_cancer-1)),mean=0,sd=0.25)
-pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))] <- abs(fixef_coefficient[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
+pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))] <- abs(pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
 
 
 list(cancer_intercept0=cancer_intercept0, cancer_slope=cancer_slope, #cat_int=cat_int,
