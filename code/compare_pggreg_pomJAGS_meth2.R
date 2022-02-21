@@ -6,7 +6,7 @@ base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan
 setwd(base.location)
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files-etaknown-model/test")
+location.of.generated.files <- paste0(base.location, "generated-files-pgg-model/test")
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
 name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
@@ -25,6 +25,8 @@ psa.data.eta <- psa.data.eta %>% filter(!is.na(true.pgg))
 
 # use only known eta patients
 pt.data.eta1 <- pt.data %>% filter(!is.na(true.pgg))
+
+
 pt.data.eta2 <- pt.data %>% filter(surg == 1)
 pt.data.eta2$id[which(!(pt.data.eta2$id %in% pt.data.eta1$id))] # people went through surgery still has unknown pgg
 pt.data.eta <- pt.data.eta1
@@ -121,10 +123,13 @@ for(j in 1:length(out$sims.list)){
             paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
   
 }
+
+## compare with original code
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
 jags_gamma_int <- 
   read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_intercept-2022.csv"))
 apply(jags_gamma_int, 2, get_stats)
+
 jags_gamma_int2 <- 
   read_csv(paste0("/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/generated-files-pgg-model","/jags-prediction-pgg_intercept-2022.csv"))
 apply(jags_gamma_int2, 2, get_stats)
@@ -137,4 +142,44 @@ jags_gamma_slope2 <-
   read_csv(paste0("/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/generated-files-etaknown-model","/jags-prediction-pgg_slope-2022.csv"))
 apply(jags_gamma_slope2, 2, get_stats)
 
+## check calibration
+jags_gamma_slope  <- as.matrix(jags_gamma_slope)
+jags_gamma_int  <- as.matrix(jags_gamma_int)
+expit <- function(x){exp(x)/(1+exp(x))}
 
+nsim <- ((n.iter - n.burnin)/n.thin)
+p_rc1 <- p_rc2 <- p_rc3 <-  p_rc4 <- matrix(0, ncol = nsim, nrow = npat_pgg)
+for(i in 1:nsim){
+  cuml.p_rc <- matrix(0, ncol = 3, nrow = npat_pgg)
+  
+  slope_pgg <- matrix(jags_gamma_slope[i, -1])
+  int1_pgg <- matrix(jags_gamma_int[i, -1][1])
+  int2_pgg <-  matrix(jags_gamma_int[i, -1][2])
+  int3_pgg <-  matrix(jags_gamma_int[i, -1][3])
+  
+  linpred_pgg <- modmat_pgg %*% slope_pgg
+  cuml.p_rc[,1] <- expit(matrix(int1_pgg - c(linpred_pgg)))
+  cuml.p_rc[,2] <- expit(matrix(int2_pgg - c(linpred_pgg)))
+  cuml.p_rc[,3] <- expit(matrix(int3_pgg - c(linpred_pgg)))
+  
+  p_rc1[,i] <- cuml.p_rc[,1] 
+  p_rc2[,i] <- cuml.p_rc[,2] - cuml.p_rc[,1] 
+  p_rc3[,i] <- cuml.p_rc[,3] - cuml.p_rc[,2]
+  p_rc4[,i] <- 1- p_rc1[,i] -  p_rc2[,i] -  p_rc3[,i]
+}
+p_rc <- list(p_rc1, p_rc2, p_rc3, p_rc4)
+
+obs1 <- sum(pgg.data$pgg == 1);obs2 <- sum(pgg.data$pgg == 2)
+obs3 <- sum(pgg.data$pgg == 3);obs4 <- sum(pgg.data$pgg == 4)
+
+calib <-  matrix(0, nrow=nsim)
+for(i in 1:nsim){
+  exp1[i] <- sum(p_rc1[,i]);exp2[i] <- sum(p_rc2[,i])
+  exp3[i] <- sum(p_rc3[,i]);exp4[i] <- sum(p_rc4[,i])
+  
+  calib[i] <- 
+    (obs1-exp1[i])^2/exp1[i] + (obs2-exp2[i])^2/exp2[i] + 
+    (obs3-exp3[i])^2/exp3[i] + (obs4-exp4[i])^2/exp4[i]
+}
+
+quantile(calib, c(0.025, 0.5, 0.975))
