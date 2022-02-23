@@ -5,7 +5,7 @@ base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan
 setwd(base.location)
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files-pgg-model/test")
+location.of.generated.files <- paste0(base.location, "generated-files-pgg-model/sequential_model")
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
 name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
@@ -39,8 +39,8 @@ bx.full.eta <- bx.full %>% filter(clinical_PTnum %in% pt.data.eta$clinical_PTnum
 
 bx.full.eta$pgg[bx.full.eta$npc==0 & !is.na(bx.full.eta$npc)]<-1
 pgg.data0 <- bx.full.eta[bx.full.eta$bx.here==1 & !is.na(bx.full.eta$bx.here)
-                        & !is.na(bx.full.eta$pgg)
-                        &  bx.full.eta$time.int>0,]
+                         & !is.na(bx.full.eta$pgg)
+                         &  bx.full.eta$time.int>0,]
 pgg.data1 <- pgg.data0 %>% dplyr::select(clinical_PTnum, subj, bx.dt.num, ncs, mri, std.vol,
                                          true.pgg,pgg)
 n_pgg1 <- dim(pgg.data1)[1]
@@ -72,38 +72,67 @@ modmat_pgg <- as.matrix(cbind( ns(pgg.data$bx.dt.num, Boundary.knots = bx.date.b
 npred_pgg <- dim(modmat_pgg)[2]
 
 colnames(modmat_pgg) <- c("ns(bx.dt.num,1)","ns(bx.dt.num,2)","ns(bx.dt.num,3)",
-                     "ns(ncs,1)", "ns(ncs,2)", 
-                     "mri", "std.vol", "eta_m2", "eta_m3", "eta_m4")
+                          "ns(ncs,1)", "ns(ncs,2)", 
+                          "mri", "std.vol", "eta_m2", "eta_m3", "eta_m4")
 pgg_data <- pgg.data$pgg
 npat_pgg <- n_pgg1 + n_pgg2
 #The number of latent classes/ values of true cancer state
 nlevel_cancer <- 4
+#subset for sequential models
+glmdata %>% 
+  filter(PGG > 1) %>% 
+  mutate(PGG_lev2 = factor(ifelse(PGG == 2, 1, 0), levels = c(0,1))) %>% 
+  dplyr::select(-clinical_PTnum, -PGG))
 
+pgg_data1 <- ifelse(pgg_data == 1, 1, 0)
+modmat_pgg1 <- modmat_pgg
+npat_pgg1 = npat_pgg
 
+inx_lev2 <- which(pgg_data > 1)
+pgg_data2 <- pgg_data[inx_lev2]
+pgg_data2 <- ifelse(pgg_data2 == 1, 1, 0)
+modmat_pgg2 <- modmat_pgg[inx_lev2,]
+npat_pgg2 = length(pgg_data2)
+
+inx_lev3 <- which(pgg_data > 2)
+pgg_data3 <- pgg_data[inx_lev3]
+pgg_data3 <- ifelse(pgg_data3 == 1, 1, 0)
+modmat_pgg3 <- modmat_pgg[inx_lev3,]
+npat_pgg3 = length(pgg_data3)
 ### 1. Set up jags arguments
 jags_data<-list(nlevel_cancer=nlevel_cancer, 
-                pgg_data=pgg_data, npat_pgg=npat_pgg, 
-                modmat_pgg=modmat_pgg, npred_pgg=npred_pgg
+                pgg_data1=pgg_data1, pgg_data2=pgg_data2,pgg_data3=pgg_data3,  
+                modmat_pgg1=modmat_pgg1, modmat_pgg2=modmat_pgg2,modmat_pgg3=modmat_pgg3,  
+                npat_pgg1=npat_pgg1,npat_pgg2=npat_pgg2,npat_pgg3=npat_pgg3, 
+                npred_pgg = npred_pgg,
+                alpha = 1, beta = 1
+  
 ) 
 
 ### 2. Initialize model parameters
 
 inits <- function() {
-  pgg_intercept0 <- rnorm((nlevel_cancer-1),0,1)
-  # pgg_slope <- rnorm((npred_pgg+(nlevel_cancer-1)),mean=0,sd=0.25)
-  # pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))] <- 
-  #   abs(pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
-  pgg_slope <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
-  pgg_slope[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
-    abs(pgg_slope[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
+  pgg_int1 <- pgg_int2 <-pgg_int3 <-rnorm(1,0,1)
+  pgg_slope1 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
+  pgg_slope1[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
+    abs(pgg_slope1[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
+  pgg_slope2 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
+  pgg_slope2[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
+    abs(pgg_slope2[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
+  pgg_slope3 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
+  pgg_slope3[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
+    abs(pgg_slope3[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
   
   list(
-    pgg_intercept0=pgg_intercept0, pgg_slope=pgg_slope
+    pgg_int1=pgg_int1, pgg_int2=pgg_int2, pgg_int3=pgg_int3, 
+    pgg_slope1=pgg_slope1,pgg_slope2=pgg_slope2,pgg_slope3=pgg_slope3
   ) }
 
 
 ### 3. Define parameters to be tracked
-params <- c("pgg_intercept", "pgg_slope")
+params <- c(
+            "pgg_int1", "pgg_int2", "pgg_int3",
+            "pgg_slope1", "pgg_slope2", "pgg_slope3")
 
 
 
@@ -114,7 +143,7 @@ n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
 seed=2022
 set.seed(seed)
 outj<-jags(jags_data, inits=inits, parameters.to.save=params,
-           model.file=paste("code/compare_pggreg_pomJAGS_meth2.txt"),
+           model.file=paste("code/compare_pggreg_seqJAGS.txt"),
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
 for(j in 1:length(out$sims.list)){
@@ -125,25 +154,33 @@ for(j in 1:length(out$sims.list)){
 
 ## compare with original code
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
-jags_gamma_int <- 
-  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_intercept-2022.csv"))
-apply(jags_gamma_int, 2, get_stats)
+jags_int1 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_int1-2022.csv"))
+jags_int2 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_int2-2022.csv"))
+jags_int3 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_int3-2022.csv"))
+apply(jags_int1, 2, get_stats)
+apply(jags_int2, 2, get_stats)
+apply(jags_int3, 2, get_stats)
 
-jags_gamma_int2 <- 
-  read_csv(paste0("/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/generated-files-pgg-model","/jags-prediction-pgg_intercept-2022.csv"))
-apply(jags_gamma_int2, 2, get_stats)
-
-jags_gamma_slope <- 
-  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_slope-2022.csv"))
-apply(jags_gamma_slope, 2, get_stats)
-
-jags_gamma_slope2 <- 
-  read_csv(paste0("/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/generated-files-etaknown-model","/jags-prediction-pgg_slope-2022.csv"))
-apply(jags_gamma_slope2, 2, get_stats)
+jags_slope1 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_slope1-2022.csv"))
+jags_slope2 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_slope2-2022.csv"))
+jags_slope3 <- 
+  read_csv(paste0(location.of.generated.files,"/jags-prediction-pgg_slope3-2022.csv"))
+apply(jags_slope1, 2, get_stats)
+apply(jags_slope2, 2, get_stats)
+apply(jags_slope3, 2, get_stats)
 
 ## check calibration
-jags_gamma_slope  <- as.matrix(jags_gamma_slope)
-jags_gamma_int  <- as.matrix(jags_gamma_int)
+jags_int1 <- as.matrix(jags_int1[,-1])
+jags_int2 <- as.matrix(jags_int2[,-1])
+jags_int3 <- as.matrix(jags_int3[,-1])
+jags_slope1 <- as.matrix(jags_slope1[,-1])
+jags_slope2 <- as.matrix(jags_slope2[,-1])
+jags_slope3 <- as.matrix(jags_slope3[,-1])
 expit <- function(x){exp(x)/(1+exp(x))}
 
 nsim <- ((n.iter - n.burnin)/n.thin)
@@ -151,10 +188,10 @@ p_rc1 <- p_rc2 <- p_rc3 <-  p_rc4 <- matrix(0, ncol = nsim, nrow = npat_pgg)
 for(i in 1:nsim){
   cuml.p_rc <- matrix(0, ncol = 3, nrow = npat_pgg)
   
-  slope_pgg <- matrix(jags_gamma_slope[i, -1])
-  int1_pgg <- matrix(jags_gamma_int[i, -1][1])
-  int2_pgg <-  matrix(jags_gamma_int[i, -1][2])
-  int3_pgg <-  matrix(jags_gamma_int[i, -1][3])
+  slope_pgg <- matrix(jags_gamma_slope[i, ])
+  int1_pgg <- matrix(jags_gamma_int[i, ][1])
+  int2_pgg <-  matrix(jags_gamma_int[i, ][2])
+  int3_pgg <-  matrix(jags_gamma_int[i, ][3])
   
   linpred_pgg <- modmat_pgg %*% slope_pgg
   cuml.p_rc[,1] <- expit(matrix(int1_pgg - c(linpred_pgg)))
