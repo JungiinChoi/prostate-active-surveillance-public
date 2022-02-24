@@ -30,19 +30,22 @@ for (index in (npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)) {
 for(j in 1:npat_pgg1) {
 	lin.pred1[j] <- inprod(pgg_slope1[1:npred_pgg], modmat_pgg1[j,1:npred_pgg]) 
 	logit(p_rc[j, 1]) <- pgg_int1 + lin.pred1[j]
-	pgg_data1[j] ~ dbern(p_rc[j, 1]) 
+	y.hat1[j] <- max(0, min(1,p_rc[j,1]))
+	pgg_data1[j] ~ dbern(y.hat1[j]) 
 }
 
 for(j in 1:npat_pgg2) {
 	lin.pred2[j] <- inprod(pgg_slope2[1:npred_pgg], modmat_pgg2[j,1:npred_pgg]) 
 	logit(p_rc[j, 2]) <- pgg_int2 + lin.pred2[j]
-	pgg_data2[j] ~ dbern(p_rc[j, 2]) 
+	y.hat2[j] <- max(0, min(1,p_rc[j,2]))
+	pgg_data2[j] ~ dbern(y.hat2[j]) 
 }
 
 for(j in 1:npat_pgg3) {
 	lin.pred3[j] <- inprod(pgg_slope3[1:npred_pgg], modmat_pgg3[j,1:npred_pgg]) 
 	logit(p_rc[j, 3]) <- pgg_int3 + lin.pred3[j]
-	pgg_data3[j] ~ dbern(p_rc[j, 3]) 
+	y.hat3[j] <- max(0, min(1,p_rc[j,3]))
+	pgg_data3[j] ~ dbern(y.hat3[j]) 
 }
 
 }

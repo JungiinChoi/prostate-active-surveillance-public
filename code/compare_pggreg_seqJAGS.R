@@ -79,10 +79,6 @@ npat_pgg <- n_pgg1 + n_pgg2
 #The number of latent classes/ values of true cancer state
 nlevel_cancer <- 4
 #subset for sequential models
-glmdata %>% 
-  filter(PGG > 1) %>% 
-  mutate(PGG_lev2 = factor(ifelse(PGG == 2, 1, 0), levels = c(0,1))) %>% 
-  dplyr::select(-clinical_PTnum, -PGG))
 
 pgg_data1 <- ifelse(pgg_data == 1, 1, 0)
 modmat_pgg1 <- modmat_pgg
@@ -90,13 +86,13 @@ npat_pgg1 = npat_pgg
 
 inx_lev2 <- which(pgg_data > 1)
 pgg_data2 <- pgg_data[inx_lev2]
-pgg_data2 <- ifelse(pgg_data2 == 1, 1, 0)
+pgg_data2 <- ifelse(pgg_data2 == 2, 1, 0)
 modmat_pgg2 <- modmat_pgg[inx_lev2,]
 npat_pgg2 = length(pgg_data2)
 
 inx_lev3 <- which(pgg_data > 2)
 pgg_data3 <- pgg_data[inx_lev3]
-pgg_data3 <- ifelse(pgg_data3 == 1, 1, 0)
+pgg_data3 <- ifelse(pgg_data3 == 3, 1, 0)
 modmat_pgg3 <- modmat_pgg[inx_lev3,]
 npat_pgg3 = length(pgg_data3)
 ### 1. Set up jags arguments
@@ -186,29 +182,32 @@ expit <- function(x){exp(x)/(1+exp(x))}
 nsim <- ((n.iter - n.burnin)/n.thin)
 p_rc1 <- p_rc2 <- p_rc3 <-  p_rc4 <- matrix(0, ncol = nsim, nrow = npat_pgg)
 for(i in 1:nsim){
-  cuml.p_rc <- matrix(0, ncol = 3, nrow = npat_pgg)
+  int1 <- matrix(jags_int1[i,])
+  int2 <-  matrix(jags_int2[i,])
+  int3 <-  matrix(jags_int3[i,])
+  slope1 <- matrix(jags_slope1[i,])
+  slope2 <- matrix(jags_slope2[i,])
+  slope3 <- matrix(jags_slope3[i,])
+
+  #prediction using all data (modmat_pgg)
+  linpred1 <- modmat_pgg %*% slope1
+  p_y1_given_x0 <- expit(matrix(int1 + c(linpred1)))
+  linpred2 <- modmat_pgg %*% slope2
+  p_y2_given_x0ge1 <- expit(matrix(int2 + c(linpred2)))
+  linpred3 <- modmat_pgg %*% slope3
+  p_y3_given_x0ge2 <- expit(matrix(int3 + c(linpred3)))
   
-  slope_pgg <- matrix(jags_gamma_slope[i, ])
-  int1_pgg <- matrix(jags_gamma_int[i, ][1])
-  int2_pgg <-  matrix(jags_gamma_int[i, ][2])
-  int3_pgg <-  matrix(jags_gamma_int[i, ][3])
-  
-  linpred_pgg <- modmat_pgg %*% slope_pgg
-  cuml.p_rc[,1] <- expit(matrix(int1_pgg - c(linpred_pgg)))
-  cuml.p_rc[,2] <- expit(matrix(int2_pgg - c(linpred_pgg)))
-  cuml.p_rc[,3] <- expit(matrix(int3_pgg - c(linpred_pgg)))
-  
-  p_rc1[,i] <- cuml.p_rc[,1] 
-  p_rc2[,i] <- cuml.p_rc[,2] - cuml.p_rc[,1] 
-  p_rc3[,i] <- cuml.p_rc[,3] - cuml.p_rc[,2]
+  p_rc1[,i] <- p_y1_given_x0
+  p_rc2[,i] <- (1-p_y1_given_x0) * p_y2_given_x0ge1
+  p_rc3[,i] <- (1-p_y1_given_x0)*(1-p_y2_given_x0ge1) * p_y3_given_x0ge2
   p_rc4[,i] <- 1- p_rc1[,i] -  p_rc2[,i] -  p_rc3[,i]
 }
-p_rc <- list(p_rc1, p_rc2, p_rc3, p_rc4)
 
 obs1 <- sum(pgg.data$pgg == 1);obs2 <- sum(pgg.data$pgg == 2)
 obs3 <- sum(pgg.data$pgg == 3);obs4 <- sum(pgg.data$pgg == 4)
 
 calib <-  matrix(0, nrow=nsim)
+exp1 <- exp2 <- exp3 <-exp4 <- calib <- matrix(0, nrow = nsim)
 for(i in 1:nsim){
   exp1[i] <- sum(p_rc1[,i]);exp2[i] <- sum(p_rc2[,i])
   exp3[i] <- sum(p_rc3[,i]);exp4[i] <- sum(p_rc4[,i])
