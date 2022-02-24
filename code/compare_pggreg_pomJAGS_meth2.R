@@ -170,7 +170,7 @@ p_rc <- list(p_rc1, p_rc2, p_rc3, p_rc4)
 
 obs1 <- sum(pgg.data$pgg == 1);obs2 <- sum(pgg.data$pgg == 2)
 obs3 <- sum(pgg.data$pgg == 3);obs4 <- sum(pgg.data$pgg == 4)
-
+exp1 <- exp2 <- exp3 <-exp4 <- calib <- matrix(0, nrow = nsim)
 calib <-  matrix(0, nrow=nsim)
 for(i in 1:nsim){
   exp1[i] <- sum(p_rc1[,i]);exp2[i] <- sum(p_rc2[,i])
@@ -182,3 +182,4 @@ for(i in 1:nsim){
 }
 
 quantile(calib, c(0.025, 0.5, 0.975))
+summary(calib)

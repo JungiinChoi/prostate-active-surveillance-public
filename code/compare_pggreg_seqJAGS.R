@@ -218,3 +218,4 @@ for(i in 1:nsim){
 }
 
 quantile(calib, c(0.025, 0.5, 0.975))
+summary(calib)
