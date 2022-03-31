@@ -55,21 +55,23 @@ source(paste(location.of.r.scripts,"data-prep-for-jags.R",sep="/"))
 source(paste(location.of.r.scripts,"argument-prep-for-jags.R",sep="/"))
 
 #Define JAGS model
-source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
+source(paste(location.of.r.scripts,"JAGS-prediction-model-reform-pom-replaced.R",sep="/"))
 
 
 #run model and save results
-do.one<-function(seed){
+seed <- 2022
+#do.one<-function(seed){
   set.seed(seed)
   outj<-jags(jags_data, inits=inits, parameters.to.save=params,
-           model.file=paste(location.of.r.scripts, "JAGS-prediction-model.txt", sep="/"),
+           model.file=paste(location.of.r.scripts, 
+                            "JAGS-prediction-model-reform-pom-replaced.txt", sep="/"),
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
   out<-outj$BUGSoutput
   for(j in 1:length(out$sims.list)){
   	write.csv(out$sims.list[[j]],
   	          paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
-  }
-}
+#  }
+#}
 
 ####this is how I defined the seed on our SGE computing cluster; each task was assigned an id.
 # (SEED<-as.numeric(Sys.getenv("SGE_TASK_ID")))

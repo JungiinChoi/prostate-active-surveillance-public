@@ -450,8 +450,9 @@ n_bx <- dim(bx.data)[1]
 pt.data$time.until.rc <- vector(length=n)
 for(i in 1:n){
 	if(pt.data$rc[i]==1){
+	  ## warning occurs for i = 1247, set RHS to be unique values _ Zitong
 		pt.data$time.until.rc[i] <-
-		  bx.data$time.since.dx[bx.data$id==pt.data$id[i] & bx.data$rc==1 & !is.na(bx.data$rc)]	}
+		  unique(bx.data$time.since.dx[bx.data$id==pt.data$id[i] & bx.data$rc==1 & !is.na(bx.data$rc)])	}
 		else{pt.data$time.until.rc[i]<-NA}}
 
 
@@ -822,6 +823,7 @@ for(i in 1:n){
 
 
 #variable values that do depend on patient biopsy data
+options(warn = 0)
 for(j in 1:N){
 	if(bx.full$time.int[j]>0){ #post-dx biopsies
 		bx.data$use<-rep(0,n_bx) #clearing existing values in this variable
@@ -1060,7 +1062,7 @@ for(j in 1:N){
 			if(sum(psa.data$subj==bx.full$subj[j] & psa.data$time.since.dx<bx.full$time.int[j])>0){
 			date.use <- max(psa.data$dt.num[psa.data$subj==bx.full$subj[j] & psa.data$time.since.dx<bx.full$time.int[j]])
 			if(sum(is.na(psa.use.surg))>0){
-				bx.full$psa.pres.bx[j] <- bx.full$psa.pres.surg[j] <- psa.data$log.psa[psa.data$subj==bx.full$subj[j] & psa.data$dt.num==date.use]}
+				bx.full$psa.pres.bx[j] <- bx.full$psa.pres.surg[j] <- unique(psa.data$log.psa[psa.data$subj==bx.full$subj[j] & psa.data$dt.num==date.use])} ## add unique(), RHS returns 2 values
 				else{
 					bx.full$psa.pres.bx[j]  <- psa.data$log.psa[psa.data$subj==bx.full$subj[j] & psa.data$dt.num==date.use]
 				}
@@ -1144,9 +1146,10 @@ bx.full$psa.traj.surg[is.na(bx.full$psa.traj.surg)]<-0
 
 
 
-### 11. Save data
+# ### 11. Save data
 save(pt.data, psa.data, bx.full,
      file=paste0(location.of.generated.files,"/IOP-data-shaping-work-space.RData"))
 
 #clean-up workspace
 rm(bx.data, bx.subj, bx.time, d,  demo.data, i, j, max.fup, max.time.until.surg, n, N, n_psa, n_bx, n_tx, ordered, psa.use.bx, psa.use.surg, rc.time, rm.id, sum.use, times.use)
+

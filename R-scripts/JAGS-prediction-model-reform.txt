@@ -3,24 +3,30 @@ model {
 
 ###PRIORS FOR LATENT CLASS MODEL
 
-#flat priors for proportional odds model intercepts and coefficients with ordinal eta as outcome
-#thresholds/intercept 
-for (k in 1:(nlevel_cancer - 1)) {
-  cancer_intercept0[k] ~ dnorm(0, 0.01)
-}
-cancer_intercept[1:(nlevel_cancer - 1)] <- sort(cancer_intercept0)
-#proportional odds coefficients
+# priors for sequential model for ordinal eta as outcome
+cancer_inv_sigma_sq ~ dgamma(alpha, beta)
+cancer_sigma_sq <- 1/cancer_inv_sigma_sq
 for (index in 1:npred_cancer) {
-  cancer_slope[index] ~ dnorm(0, 0.01)
+  cancer_coef_mean[index] ~ dnorm(0,1)
 }
+cancer_int1 ~ dnorm(-0.16, 1) 
+cancer_int2 ~ dnorm(0.71, 1)
+cancer_int3 ~ dnorm(1.15, 1)
+for(index in 1:npred_cancer) {
+  cancer_slope1[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+  cancer_slope2[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+  cancer_slope3[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+}
+
 
 ###PRIORS FOR PSA MIXED MODEL
 
 #model correlated random effects distribution
+scale_prior_range <- 100
 for (index in 1:npred_ranef_psa) {
-	scale_ranef_mean_psa[index] ~ dunif(0,100)
+	scale_ranef_mean_psa[index] ~ dunif(0,scale_prior_range)
 	for(k in 1:nlevel_cancer_bin) {
-		mu_raw[index, k] ~ dnorm(0, 0.01)
+		mu_raw[index, k] ~ dnorm(0, guassian_prior_prec)
 		mu[index, k] <- scale_ranef_mean_psa[index] * mu_raw[index,k]
 	}  
 }
@@ -41,12 +47,13 @@ rho_int_slope <- Sigma_B_raw[1, 2] / sqrt(Sigma_B_raw[1, 1] * Sigma_B_raw[2, 2])
 ranef_cov <- rho_int_slope * ranef_var_intercept * ranef_var_slope
 
 #residual variance, independent of correlated random effects, same across classes
-resid_var_psa ~ dunif(0, 1)
-tau_res <- pow(resid_var_psa, -2)
+resid_sd_prior_range <- 1
+resid_sd_psa ~ dunif(0, resid_sd_prior_range)
+tau_res_prec <- pow(resid_sd_psa, -2)
 
 #fixed effects
 for(index in 1:npred_fixef_psa) {
-	fixef_coefficient[index] ~ dnorm(0, 0.01)
+	fixef_coefficient[index] ~ dnorm(0, gaussian_prior_prec)
 }
 
 
@@ -54,16 +61,16 @@ for(index in 1:npred_fixef_psa) {
 ##proportional odds regression for biopsy grade
 #thresholds/intercept
 for(k in 1:(nlevel_cancer-1)) {
-  pgg_intercept0[k] ~ dnorm(0,0.01)
+  pgg_intercept0[k] ~ dnorm(0,gaussian_prior_prec)
 }
 pgg_intercept[1:(nlevel_cancer - 1)] <- sort(pgg_intercept0)
 #proportional odds coefficients
 for(index in 1:npred_pgg) {
-  pgg_slope[index] ~ dnorm(0,0.01)
+  pgg_slope[index] ~ dnorm(0,gaussian_prior_prec)
 }
 
 for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
-  pgg_slope[index] ~ dnorm(0, 0.01)T(-1,)
+  pgg_slope[index] ~ dnorm(0, gaussian_prior_prec)T(-1,)
 }
 
 
@@ -71,17 +78,17 @@ for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
 
 
 ##latent variable for true cancer state
-##proportional odds regression
-for(i in 1:npat) {
-  lin.pred.eta[i] <- inprod(cancer_slope[1:npred_cancer], modmat_cancer[i,1:npred_cancer])
-  logit(cuml.p_eta[i, 1]) <- cancer_intercept[1] - lin.pred.eta[i]
-  p_eta[i, 1] <- cuml.p_eta[i, 1]
-  for(k in 2:(nlevel_cancer-1)) {
-    logit(cuml.p_eta[i, k]) <- cancer_intercept[k] - lin.pred.eta[i]
-    p_eta[i,k] <- cuml.p_eta[i, k] - cuml.p_eta[i, (k-1)]
-    }
-  p_eta[i, nlevel_cancer] <- 1 - cuml.p_eta[i, (nlevel_cancer-1)] 
+##sequential logistic regression
+for(j in 1:npat){ 
+  exponent1[j] <- cancer_int1 + inprod(cancer_slope1[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  exponent2[j] <- cancer_int2 + inprod(cancer_slope2[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  exponent3[j] <- cancer_int3 + inprod(cancer_slope3[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  p_eta[j, 1] <- exponent1[j]/(1+exponent1[j])
+  p_eta[j, 2] <- 1/(1+exponent1[j]) * exponent2[j]/(1+exponent2[j])
+  p_eta[j, 3] <- 1/(1+exponent1[j]) * 1/(1+exponent2[j]) * exponent3[j]/(1+exponent3[j])
+  p_eta[j, 4] <- 1- p_eta[j, 1] - p_eta[j, 2] - p_eta[j, 3]
 }
+
 
 for(i in 1:npat_cancer_known) {
   cancer_data[i] ~ dcat(p_eta[i, 1:nlevel_cancer])
@@ -94,7 +101,6 @@ for(i in (npat_cancer_known+1):npat) {
   eta[i] <- cancer_state[(i-npat_cancer_known)]
   eta.bin[i] <- step(eta[i]-2) + 1
 }  #for those without SURG
-
 
 ##linear mixed effects model for PSA
 #generate random intercept and slope for individual given latent class
