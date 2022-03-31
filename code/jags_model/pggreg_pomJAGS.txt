@@ -1,0 +1,39 @@
+model {
+
+
+### PRIORS ----------------------------
+
+#priors for proportional odds regression for biopsy grade
+#thresholds/intercept
+for(k in 1:(nlevel_cancer-1)) {
+  pgg_intercept0[k] ~ dnorm(0,0.01)
+}
+pgg_intercept[1:(nlevel_cancer - 1)] <- sort(pgg_intercept0)
+#proportional odds coefficients
+for(index in 1:npred_pgg) {
+  pgg_slope[index] ~ dnorm(0,0.01)
+}
+
+for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
+  pgg_slope[index] ~ dnorm(0, 0.01)T(-1,)
+}
+
+
+### LIKELIHOOD ----------------------------
+#proportional odds regression for biopsy upgrading
+for(j in 1:npat_pgg) {
+	lin.pred[j] <- inprod(pgg_slope[1:npred_pgg], modmat_pgg[j,1:npred_pgg]) + 
+	pgg_slope[(npred_pgg + 1)] * step(cancer_data[pgg_patient_index_map[j]] - 2) + 
+	pgg_slope[(npred_pgg + 2)] * step(cancer_data[pgg_patient_index_map[j]] - 3) + 
+	pgg_slope[(npred_pgg + 3)] * step(cancer_data[pgg_patient_index_map[j]] - 4)
+	logit(cuml.p_rc[j, 1]) <- pgg_intercept[1] - lin.pred[j]
+	p_rc[j,1] <- cuml.p_rc[j,1]
+	for(k in 2:(nlevel_cancer-1)) {
+		logit(cuml.p_rc[j,k]) <- pgg_intercept[k] - lin.pred[j]
+		p_rc[j,k] <- cuml.p_rc[j,k] - cuml.p_rc[j,(k-1)] 
+	}
+	p_rc[j,nlevel_cancer] <- 1 - cuml.p_rc[j, (nlevel_cancer-1)]
+	pgg_data[j] ~ dcat(p_rc[j, 1:nlevel_cancer]) 
+}
+
+ }

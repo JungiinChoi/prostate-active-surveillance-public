@@ -1,0 +1,75 @@
+#### Cancer state model betaj, sigma-----------------
+# Priors for sequential model for ordinal eta as outcome
+cancer_inv_sigma_sq ~ dgamma(alpha, beta)
+cancer_sigma_sq <- 1/cancer_inv_sigma_sq
+for (index in 1:npred_cancer) {
+  cancer_coef_mean[index] ~ dnorm(0,1)
+}
+cancer_int1 ~ dnorm(-0.16, 1) 
+cancer_int2 ~ dnorm(0.71, 1)
+cancer_int3 ~ dnorm(1.15, 1)
+for(index in 1:npred_cancer) {
+  cancer_slope1[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+  cancer_slope2[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+  cancer_slope3[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+}
+
+# Likelihood
+
+for(j in 1:npat){ 
+  exponent1[j] <- cancer_int1 + inprod(cancer_slope1[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  exponent2[j] <- cancer_int2 + inprod(cancer_slope2[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  exponent3[j] <- cancer_int3 + inprod(cancer_slope3[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
+  p_eta[j, 1] <- exponent1[j]/(1+exponent1[j])
+  p_eta[j, 2] <- 1/(1+exponent1[j]) * exponent2[j]/(1+exponent2[j])
+  p_eta[j, 3] <- 1/(1+exponent1[j]) * 1/(1+exponent2[j]) * exponent3[j]/(1+exponent3[j])
+  p_eta[j, 4] <- 1- p_eta[j, 1] - p_eta[j, 2] - p_eta[j, 3]
+}
+
+
+for(i in 1:npat_cancer_known) {
+  cancer_data[i] <- dcat(p_eta[i,1:nlevel_cancer])
+  eta[i] <- cancer_data[i]
+  eta.bin[i] <- step(eta[i]-2) + 1
+}
+
+for(i in (npat_cancer_known+1):npat) { # for patients with unknown cancer
+  cancer_state[(i-npat_cancer_known)] ~ dcat(p_eta[i, 1:nlevel_cancer])
+  eta[i] <- cancer_state[(i-npat_cancer_known)]
+  eta.bin[i] <- step(eta[i]-2) + 1
+} 
+
+#### PGG model -----------------
+# Priors for sequential model for PGG
+
+pgg_inv_sigma_sq ~ dgamma(alpha, beta)
+pgg_sigma_sq <- 1/cancer_inv_sigma_sq
+for (index in 1:npred_cancer) {
+  pgg_coef_mean[index] ~ dnorm(0,1)
+}
+pgg_int1 ~ dnorm(-0.16, 1) 
+pgg_int2 ~ dnorm(0.71, 1)
+pgg_int3 ~ dnorm(1.15, 1)
+for(index in 1:npred_cancer) {
+  pgg_slope1[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
+  pgg_slope2[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
+  pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
+}
+
+# Likelihood
+for(j in 1:npat){ 
+  pgg_exp1[j] <- pgg_int1 + inprod(pgg_slope1[1:npred_pgg], modmat_pgg[j,1:npred_pgg])
+  pgg_exp2[j] <- pgg_int2 + inprod(pgg_slope2[1:npred_pgg], modmat_pgg[j,1:npred_pgg])
+  pgg_exp3[j] <- pgg_int3 + inprod(pgg_slope3[1:npred_pgg], modmat_pgg[j,1:npred_pgg])
+  p_pgg[j, 1] <- pgg_exp1[j]/(1+pgg_exp1[j])
+  p_pgg[j, 2] <- 1/(1+pgg_exp1[j]) * pgg_exp2[j]/(1+pgg_exp2[j])
+  p_pgg[j, 3] <- 1/(1+pgg_exp1[j]) * 1/(1+pgg_exp2[j]) * pgg_exp3[j]/(1+pgg_exp3[j])
+  p_pgg[j, 4] <- 1- p_pgg[j, 1] - p_pgg[j, 2] - p_pgg[j, 3]
+}
+
+
+for(i in 1:npat) {
+  pgg_data[i] <- dcat(p_eta[i,1:nlevel_cancer])
+}
+
+

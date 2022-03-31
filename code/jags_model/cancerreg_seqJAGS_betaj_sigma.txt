@@ -1,0 +1,48 @@
+#slope coefs center at fixed slope across all stages
+#with fixed variance
+model {
+
+### PRIORS ----------------------------
+# mean and variance for coefficients
+inv_sigma_sq ~ dgamma(alpha, beta)
+sigma_sq <- 1/inv_sigma_sq
+
+for(index in 1:npred_cancer) {
+  coef_mean[index] ~ dnorm(0,1)
+}
+
+#thresholds/intercept
+cancer_int1 ~ dnorm(-0.16, 1) #center at logodds of marginal probabilities
+cancer_int2 ~ dnorm(0.71, 1)
+cancer_int3 ~ dnorm(1.15, 1)
+
+#sequential glm coefficients (other than intercept)
+for(index in 1:npred_cancer) {
+  cancer_slope1[index] ~ dnorm(coef_mean[index], inv_sigma_sq)
+  cancer_slope2[index] ~ dnorm(coef_mean[index], inv_sigma_sq)
+  cancer_slope3[index] ~ dnorm(coef_mean[index], inv_sigma_sq)
+}
+
+
+### LIKELIHOOD ----------------------------
+for(j in 1:npat_cancer1) {
+	lin.pred1[j] <- inprod(cancer_slope1[1:npred_cancer], modmat_cancer1[j,1:npred_cancer]) 
+	logit(p_rc[j, 1]) <- cancer_int1 + lin.pred1[j]
+	y.hat1[j] <- max(0, min(1,p_rc[j,1]))
+	cancer_data1[j] ~ dbern(y.hat1[j]) 
+}
+for(j in 1:npat_cancer2) {
+	lin.pred2[j] <- inprod(cancer_slope2[1:npred_cancer], modmat_cancer2[j,1:npred_cancer]) 
+	logit(p_rc[j, 2]) <- cancer_int2 + lin.pred2[j]
+	y.hat2[j] <- max(0, min(1,p_rc[j,2]))
+	cancer_data2[j] ~ dbern(y.hat2[j]) 
+}
+
+for(j in 1:npat_cancer3) {
+	lin.pred3[j] <- inprod(cancer_slope3[1:npred_cancer], modmat_cancer3[j,1:npred_cancer]) 
+	logit(p_rc[j, 3]) <- cancer_int3 + lin.pred3[j]
+	y.hat3[j] <- max(0, min(1,p_rc[j,3]))
+	cancer_data3[j] ~ dbern(y.hat3[j]) 
+}
+
+}

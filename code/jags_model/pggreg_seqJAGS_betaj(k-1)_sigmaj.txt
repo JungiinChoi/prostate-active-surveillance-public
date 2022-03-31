@@ -1,0 +1,45 @@
+#slope coefs center at previous stage slope
+#with coef specific variance
+model {
+
+### PRIORS ----------------------------
+for(index in 1:(npred_pgg)){
+  inv_sigma_sq[index] ~ dgamma(alpha, beta)
+  sigma_sq[index] <- 1/inv_sigma_sq[index]
+}
+
+#thresholds/intercept
+pgg_int1 ~ dnorm(1.32, 1) #center at marginal probabilities
+pgg_int2 ~ dnorm(0.61, 1)
+pgg_int3 ~ dnorm(0.78, 1)
+
+#sequential glm coefficients (other than intercept)
+for(index in 1:npred_pgg) {
+  pgg_slope1[index] ~ dnorm(0,0.01)
+  pgg_slope2[index] ~ dnorm(pgg_slope1[index],inv_sigma_sq[index])
+  pgg_slope3[index] ~ dnorm(pgg_slope2[index],inv_sigma_sq[index])
+}
+
+### LIKELIHOOD ----------------------------
+for(j in 1:npat_pgg1) {
+	lin.pred1[j] <- inprod(pgg_slope1[1:npred_pgg], modmat_pgg1[j,1:npred_pgg]) 
+	logit(p_rc[j, 1]) <- pgg_int1 + lin.pred1[j]
+	y.hat1[j] <- max(0, min(1,p_rc[j,1]))
+	pgg_data1[j] ~ dbern(y.hat1[j]) 
+}
+
+for(j in 1:npat_pgg2) {
+	lin.pred2[j] <- inprod(pgg_slope2[1:npred_pgg], modmat_pgg2[j,1:npred_pgg]) 
+	logit(p_rc[j, 2]) <- pgg_int2 + lin.pred2[j]
+	y.hat2[j] <- max(0, min(1,p_rc[j,2]))
+	pgg_data2[j] ~ dbern(y.hat2[j]) 
+}
+
+for(j in 1:npat_pgg3) {
+	lin.pred3[j] <- inprod(pgg_slope3[1:npred_pgg], modmat_pgg3[j,1:npred_pgg]) 
+	logit(p_rc[j, 3]) <- pgg_int3 + lin.pred3[j]
+	y.hat3[j] <- max(0, min(1,p_rc[j,3]))
+	pgg_data3[j] ~ dbern(y.hat3[j]) 
+}
+
+}
