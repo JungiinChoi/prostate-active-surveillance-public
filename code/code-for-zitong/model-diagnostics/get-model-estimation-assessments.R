@@ -20,21 +20,21 @@ rm(list=ls())
 
 ### 2. Define directories, file names
 #### User will need to edit
-base.location <- "/users/rcoley/jhas-epic/psa/psa-new/" 
+base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/" #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
 location.of.generated.files <- paste0(base.location, "generated-files")
 
 #consider separate location for assessment summary R scripts
-location.of.assessment.r.scripts<- location.of.r.scripts
+location.of.assessment.r.scripts<- paste0(base.location, "code/code-for-zitong/model-diagnostics")
 location.of.assessment.summaries <- location.of.generated.files
 
 
 #### User will need to edit
-name.of.pt.data <- "Demographics_8_9.csv" 
-name.of.bx.data <- "Biopsies_8_9.csv" 
-name.of.psa.data <- "PSA_8_9.csv" 
-name.of.tx.data <- "Treatment_8.9.csv" 
+name.of.pt.data <- "Demographics_6.15.csv"  #"Demographics_8_9.csv" 
+name.of.bx.data <- "Biopsies_6.15.csv"
+name.of.psa.data <- "PSA_6.15.csv"
+name.of.tx.data <- "Treatment_6.15.csv"
 
 
   
@@ -52,7 +52,7 @@ library("pROC")
 
 ### 4. Set date of data pull
 #### User will need to edit
-date.pull<-as.numeric(as.Date("8/10/17","%m/%d/%y"))
+date.pull<-as.numeric(as.Date("03/21/22","%m/%d/%y"))
 
 
 
@@ -66,7 +66,7 @@ data.check <- function(condition, message){
   if(condition==FALSE){print(paste(message, "Program terminated.", sep=" "))}
   stopifnot(condition)}
 
-load(paste0(location.of.generated.files,"/AS-data-shaping-work-space.RData"))
+load(paste0(location.of.generated.files,"/IOP-data-shaping-work-space.RData"))
 
 
 #Load tidied/shaped data; further shaping for JAGS

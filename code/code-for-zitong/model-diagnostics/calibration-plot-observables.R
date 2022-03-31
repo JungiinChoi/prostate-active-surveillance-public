@@ -23,20 +23,20 @@ expit <- function(x)
 ### 2. Load model results
 
 ## get eta predictions
-etahat<-read.csv(paste0(location.of.generated.files, "/jags-prediction-eta.hat-1.csv"))
+etahat<-read.csv(paste0(location.of.generated.files, "/jags-prediction-eta.hat-2021.csv"))
 etahat<-as.matrix(etahat[,2:dim(etahat)[2]])
 for(i in 2:5){
   res<-read.csv(paste0(location.of.generated.files, "/jags-prediction-eta.hat-",i,".csv"))
   etahat<-rbind(etahat,res[,2:dim(res)[2]])}
+
+#length of saved posterior chain
+(B<-dim(etahat)[1])
 
 #mean eta predictions
 pred_eta <- matrix(nrow=(n-n_eta_known), ncol=K)
 for(i in 1:(n-n_eta_known)){for(k in 1:K){
   pred_eta[i,k] <- sum(etahat[,i]==k)/B }}
 
-
-#length of saved posterior chain
-(B<-dim(etahat)[1])
 
 ## get parameter estimates in biopsy outcome proportional odds model
 alpha<-read.csv(paste0(location.of.generated.files, "/jags-prediction-alpha-1.csv"))

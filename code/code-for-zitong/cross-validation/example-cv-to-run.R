@@ -18,15 +18,15 @@ rm(list=ls())
 
 ### 2. Define directories, file names
 #### These will have to be adjusted by the user 
-base.location <- "/users/rcoley/jhas-epic/psa/psa-new/" 
+base.location <- '~/Downloads/prostate-active-surveillance-vDaan/' #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
 location.of.data <- paste0(base.location, "data")
-location.of.r.scripts <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files")
+location.of.r.scripts <- paste0(base.location, "code/code-for-zitong/cross-validation")
+location.of.generated.files <- paste0(base.location, "generated-files-cv")
 
-name.of.pt.data <- "Demographics_8_9.csv" 
-name.of.bx.data <- "Biopsies_8_9.csv" 
-name.of.psa.data <- "PSA_8_9.csv" 
-name.of.tx.data <- "Treatment_8.9.csv" 
+name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
+name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
+name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
+name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
 
 
 
@@ -42,21 +42,20 @@ library("R2jags")
 
 ### 4. Set date of data pull
 #### This should be adjusted by the user 
-date.pull<-as.numeric(as.Date("8/9/17","%m/%d/%y"))
+date.pull<-as.numeric(as.Date("3/21/22","%m/%d/%y"))
 
 
 ## 5. Set seed, group of patients to mask known state
 #### If using this script to run all R code, can comment out this code for defining the seed and group to be exclude at the top of cv-data-prep-for-jags.R
 #### This should be adjusted by the user depending on how seed, masking set 
-SEED <- as.numeric(Sys.getenv("SGE_TASK_ID"))
+#SEED <- as.numeric(Sys.getenv("SGE_TASK_ID"))
 # For GAP3 analysis, make this seed=1,...,10 and define grouping variable with values 1,...,10 
-to.mask<- SEED
-
+#to.mask<- SEED
+SEED <- 1:5;to.mask<- SEED
 
 ### 6. Run R scripts to prepare model estimation
-
 #Load data; tidy, check, and shape
-source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/"))
+source(paste(paste0(base.location, "R-scripts"),"data-load-check-and-shaping.R",sep="/"))
 
 #Load tidied/shaped data; further shaping for JAGS
 source(paste(location.of.r.scripts,"cv-data-prep-for-jags.R",sep="/"))

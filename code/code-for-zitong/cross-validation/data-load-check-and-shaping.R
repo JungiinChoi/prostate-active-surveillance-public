@@ -30,10 +30,10 @@
 #### primary directory should contain 3 folders: data, R-scripts, generated-files. 
 #This script will pull data from the "data" folder and put an RData database in the "generated-files" folder.
 #The complete code will ultimately source several R scripts (all stored in "R-scripts") and save model estimation results in "generated-files" 
-base.location               <- "~/coley/data-cleaning/"
-location.of.data            <- paste0(base.location, "data")
-location.of.r.scripts       <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files")
+# base.location               <- "~/coley/data-cleaning/"
+# location.of.data            <- paste0(base.location, "data")
+# location.of.r.scripts       <- paste0(base.location, "R-scripts")
+# location.of.generated.files <- paste0(base.location, "generated-files")
 
 #### See read.csv() commands below. I have assumed these are .csv files, but this code can be ammended to read in several types of files. 
 

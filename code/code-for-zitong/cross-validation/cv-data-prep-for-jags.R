@@ -1,8 +1,8 @@
 ########### SEED/GROUP TO MASK IS EITHER SET HERE OR IN EXAMPLE-CV-TO-RUN.R
 #### This should be adjusted by the user depending on how seed, masking set 
-SEED <- as.numeric(Sys.getenv("SGE_TASK_ID"))
-# For GAP3 analysis, make this seed=1,...,10 and define grouping variable with values 1,...,10 
-to.mask<- SEED
+# SEED <- as.numeric(Sys.getenv("SGE_TASK_ID"))
+# # For GAP3 analysis, make this seed=1,...,10 and define grouping variable with values 1,...,10 
+# to.mask<- SEED
 ###########
 
 

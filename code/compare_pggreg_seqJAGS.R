@@ -1,19 +1,24 @@
 ## compare sequential model and proportional odds using patients under surgery (eta known)
+## for both varying prior and fixed intercept variance
+## added cross validation
 rm(list=ls())
 source('R-scripts/load_libs.R')
 base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/" #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
 setwd(base.location)
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "R-scripts")
-location.of.generated.files <- paste0(base.location, "generated-files-pgg-model/sequential_model")
 
-name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
-name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
-name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
-name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
-
-date.pull<-as.numeric(Sys.Date())
-source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/"))
+# name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
+# name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
+# name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
+# name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
+# 
+# date.pull<-as.numeric(Sys.Date())
+# source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/"))
+# save.image(file='dataloading.RData')
+location.of.generated.files <- paste0(base.location, "generated-files-pgg-model-varyingsigma2/sequential_model/cv")
+model.file = paste("code/compare_pggreg_sigmaj_seqJAGS.txt")
+load('dataloading.RData')
 #source(paste(location.of.r.scripts,"data-prep-for-jags-reform.R",sep="/"))
 #source(paste(location.of.r.scripts,"argument-prep-for-jags-reform.R",sep="/"))
 # source(paste(location.of.r.scripts,"JAGS-prediction-model-etaknown.R",sep="/"))
@@ -36,7 +41,6 @@ npat_cancer_known <- length(cancer_data)
 pt.data.eta$dx.age.std <- scale(pt.data.eta$dx.age)
 bx.full <- bx.full %>% left_join(eta.info)
 bx.full.eta <- bx.full %>% filter(clinical_PTnum %in% pt.data.eta$clinical_PTnum)
-
 bx.full.eta$pgg[bx.full.eta$npc==0 & !is.na(bx.full.eta$npc)]<-1
 pgg.data0 <- bx.full.eta[bx.full.eta$bx.here==1 & !is.na(bx.full.eta$bx.here)
                          & !is.na(bx.full.eta$pgg)
@@ -57,97 +61,147 @@ n_pgg2 <- dim(pgg.data2)[1]
 pgg.data <- rbind(pgg.data1, pgg.data2)
 #pgg.data$eta <- cancer_data[pgg.data$subj] # this is the same as pgg.data$true.pgg
 # true pgg used for step functions in regression, pgg_data are measured pgg
-pgg.data$eta_m2 <- ifelse(pgg.data$true.pgg-2 >=0 , 1, 0)
-pgg.data$eta_m3 <- ifelse(pgg.data$true.pgg-3 >=0 , 1, 0)
-pgg.data$eta_m4 <- ifelse(pgg.data$true.pgg-4 >=0 , 1, 0)
+# pgg.data$eta_m2 <- ifelse(pgg.data$true.pgg-2 >=0 , 1, 0)
+# pgg.data$eta_m3 <- ifelse(pgg.data$true.pgg-3 >=0 , 1, 0)
+# pgg.data$eta_m4 <- ifelse(pgg.data$true.pgg-4 >=0 , 1, 0)
 
 bx.date.knots <- attr(ns(pgg.data$bx.dt.num, 3), "knots")
 bx.date.bknots <- attr(ns(pgg.data$bx.dt.num, 3), "Boundary.knots")
 pgg.ncs.knots <- attr(ns(pgg.data$ncs, 2), "knots")
 pgg.ncs.bknots <- attr(ns(pgg.data$ncs, 2), "Boundary.knots")
 
-modmat_pgg <- as.matrix(cbind( ns(pgg.data$bx.dt.num, Boundary.knots = bx.date.bknots, knots = bx.date.knots),
-                               ns(pgg.data$ncs , Boundary.knots = pgg.ncs.bknots, knots = pgg.ncs.knots),
-                               pgg.data[, c("mri", "std.vol", "eta_m2", "eta_m3", "eta_m4")] ))
+std.ns.bxdt <- scale(ns(pgg.data$bx.dt.num, Boundary.knots = bx.date.bknots, knots = bx.date.knots))
+std.ns.ncs <- scale(ns(pgg.data$ncs , Boundary.knots = pgg.ncs.bknots, knots = pgg.ncs.knots))
+modmat_pgg <- as.matrix(cbind(std.ns.bxdt,
+                              std.ns.ncs,
+                              pgg.data[, c("mri", "std.vol")] ))
 npred_pgg <- dim(modmat_pgg)[2]
-
 colnames(modmat_pgg) <- c("ns(bx.dt.num,1)","ns(bx.dt.num,2)","ns(bx.dt.num,3)",
-                          "ns(ncs,1)", "ns(ncs,2)", 
-                          "mri", "std.vol", "eta_m2", "eta_m3", "eta_m4")
+                          "ns(std.ncs,1)", "ns(std.ncs,2)", 
+                          "mri", "std.vol")
 pgg_data <- pgg.data$pgg
 npat_pgg <- n_pgg1 + n_pgg2
 #The number of latent classes/ values of true cancer state
 nlevel_cancer <- 4
-#subset for sequential models
 
-pgg_data1 <- ifelse(pgg_data == 1, 1, 0)
-modmat_pgg1 <- modmat_pgg
-npat_pgg1 = npat_pgg
+## cross validate
+idlist1 <- unique(pgg.data$clinical_PTnum[pgg.data$pgg==1])
+idlist2 <- unique(pgg.data$clinical_PTnum[pgg.data$pgg==2])
+idlist3 <- unique(pgg.data$clinical_PTnum[pgg.data$pgg==3])
+idlist4 <- unique(pgg.data$clinical_PTnum[pgg.data$pgg==4])
+set.seed(2022)
+test_inx1 <- createFolds(idlist1, k=5, list = T)
+test_inx2 <- createFolds(idlist2, k=5, list = T)
+test_inx3 <- createFolds(idlist3, k=5, list = T)
+test_inx4 <- createFolds(idlist4, k=5, list = T)
 
-inx_lev2 <- which(pgg_data > 1)
-pgg_data2 <- pgg_data[inx_lev2]
-pgg_data2 <- ifelse(pgg_data2 == 2, 1, 0)
-modmat_pgg2 <- modmat_pgg[inx_lev2,]
-npat_pgg2 = length(pgg_data2)
-
-inx_lev3 <- which(pgg_data > 2)
-pgg_data3 <- pgg_data[inx_lev3]
-pgg_data3 <- ifelse(pgg_data3 == 3, 1, 0)
-modmat_pgg3 <- modmat_pgg[inx_lev3,]
-npat_pgg3 = length(pgg_data3)
-### 1. Set up jags arguments
-jags_data<-list(nlevel_cancer=nlevel_cancer, 
-                pgg_data1=pgg_data1, pgg_data2=pgg_data2,pgg_data3=pgg_data3,  
-                modmat_pgg1=modmat_pgg1, modmat_pgg2=modmat_pgg2,modmat_pgg3=modmat_pgg3,  
-                npat_pgg1=npat_pgg1,npat_pgg2=npat_pgg2,npat_pgg3=npat_pgg3, 
-                npred_pgg = npred_pgg,
-                alpha = 1, beta = 1
-  
-) 
-
-### 2. Initialize model parameters
-
-inits <- function() {
-  pgg_int1 <- pgg_int2 <-pgg_int3 <-rnorm(1,0,1)
-  pgg_slope1 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
-  pgg_slope1[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
-    abs(pgg_slope1[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
-  pgg_slope2 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
-  pgg_slope2[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
-    abs(pgg_slope2[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
-  pgg_slope3 <- rnorm((npred_pgg-(nlevel_cancer-1)),mean=0,sd=0.25)
-  pgg_slope3[(npred_pgg-(nlevel_cancer-1)+1):(npred_pgg)] <- 
-    abs(pgg_slope3[(npred_pgg+1):(npred_pgg+(nlevel_cancer-1))])
-  
-  list(
-    pgg_int1=pgg_int1, pgg_int2=pgg_int2, pgg_int3=pgg_int3, 
-    pgg_slope1=pgg_slope1,pgg_slope2=pgg_slope2,pgg_slope3=pgg_slope3
-  ) }
-
-
-### 3. Define parameters to be tracked
-params <- c(
-            "pgg_int1", "pgg_int2", "pgg_int3",
-            "pgg_slope1", "pgg_slope2", "pgg_slope3")
-
-
-
-### 4. Define other jags settings  
-n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
-
-### 5. Run
-seed=2022
-set.seed(seed)
-outj<-jags(jags_data, inits=inits, parameters.to.save=params,
-           model.file=paste("code/compare_pggreg_seqJAGS.txt"),
-           n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
-out<-outj$BUGSoutput
-for(j in 1:length(out$sims.list)){
-  write.csv(out$sims.list[[j]],
-            paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
-  
+test_ids1 <- test_ids2 <- test_ids3 <- test_ids4 <- list()
+get_testid <- function(testinx, idlist){
+  test_ids <- list()
+  for(i in 1:length(testinx)){
+    test.inx <- testinx[[i]]
+    test_ids[[i]] <- idlist[test.inx]
+  }
+  return(test_ids)
 }
+test_ids1 <- get_testid(test_inx1, idlist1)
+test_ids2 <- get_testid(test_inx2, idlist2)
+test_ids3 <- get_testid(test_inx3, idlist3)
+test_ids4 <- get_testid(test_inx4, idlist4)
 
+### run model
+for(k in 1:5){
+  message(k)
+  test_id_stage1 = c(test_ids1[[k]],test_ids2[[k]],test_ids3[[k]],test_ids4[[k]])
+  train_pos1 = which(!(pgg.data$clinical_PTnum[pgg.data$pgg>=1] %in% test_id_stage1))
+  pgg_data1 = pgg_data[train_pos1]; pgg_data1 = ifelse(pgg_data1 == 1, 1, 0)
+  modmat_pgg1 = modmat_pgg[train_pos1,]
+  npat_pgg1 = length(pgg_data1)
+  
+  test_id_stage2 = c(test_ids2[[k]],test_ids3[[k]],test_ids4[[k]])
+  train_pos2 = which(!(pgg.data$clinical_PTnum[pgg.data$pgg>=2] %in% test_id_stage2))
+  inx_lev2 <- which(pgg_data > 1)
+  pgg_data2 = pgg_data[inx_lev2]; pgg_data2 = pgg_data2[train_pos2]
+  pgg_data2 = ifelse(pgg_data2 == 2, 1, 0)
+  modmat_pgg2 = modmat_pgg[inx_lev2,]; modmat_pgg2 = modmat_pgg2[train_pos2,]
+  npat_pgg2 = length(pgg_data2)
+  
+  test_id_stage3 = c(test_ids3[[k]],test_ids4[[k]])
+  train_pos3 = which(!(pgg.data$clinical_PTnum[pgg.data$pgg>=3] %in% test_id_stage3))
+  inx_lev3 <- which(pgg_data > 2)
+  pgg_data3 = pgg_data[inx_lev3]; pgg_data3 = pgg_data3[train_pos3]
+  pgg_data3 = ifelse(pgg_data3 == 3, 1, 0)
+  modmat_pgg3 = modmat_pgg[inx_lev3,]; modmat_pgg3 = modmat_pgg3[train_pos3,]
+  npat_pgg3 = length(pgg_data3)
+  
+  ### 1. Set up jags arguments
+  jags_data<-list(
+    pgg_data1=pgg_data1, pgg_data2=pgg_data2,pgg_data3=pgg_data3,  
+    modmat_pgg1=modmat_pgg1, modmat_pgg2=modmat_pgg2,modmat_pgg3=modmat_pgg3,  
+    npat_pgg1=npat_pgg1,npat_pgg2=npat_pgg2,npat_pgg3=npat_pgg3, 
+    npred_pgg = npred_pgg,
+    alpha = 1, beta = 1
+  ) 
+  ### 2. Initialize model parameters
+  inits <- function() {
+    pgg_int1 <- pgg_int2 <-pgg_int3 <-rnorm(1,0,1)
+    pgg_slope1 <- rnorm(npred_pgg,mean=0,sd=0.25)
+    pgg_slope2 <- rnorm(npred_pgg,mean=0,sd=0.25)
+    pgg_slope3 <- rnorm(npred_pgg,mean=0,sd=0.25)
+    
+    list(
+      pgg_int1=pgg_int1, pgg_int2=pgg_int2, pgg_int3=pgg_int3, 
+      pgg_slope1=pgg_slope1,pgg_slope2=pgg_slope2,pgg_slope3=pgg_slope3
+    ) }
+  
+  
+  ### 3. Define parameters to be tracked
+  params <- c(
+    "pgg_int1", "pgg_int2", "pgg_int3",
+    "pgg_slope1", "pgg_slope2", "pgg_slope3"
+  )
+  
+  ### 4. Define other jags settings  
+  n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
+  
+  ### 5. Run
+  seed=2022
+  set.seed(seed)
+  outj<-jags(jags_data, inits=inits, parameters.to.save=params,
+             model.file=model.file,
+             n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
+  out<-outj$BUGSoutput
+  for(j in 1:length(out$sims.list)){
+    write.csv(out$sims.list[[j]],
+              paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,"cv",k,".csv",sep=""))
+    
+  }
+}
+#subset for sequential models
+# pgg_data1 <- ifelse(pgg_data == 1, 1, 0)
+# modmat_pgg1 <- modmat_pgg
+# npat_pgg1 = npat_pgg
+# 
+# inx_lev2 <- which(pgg_data > 1)
+# pgg_data2 <- pgg_data[inx_lev2]
+# pgg_data2 <- ifelse(pgg_data2 == 2, 1, 0)
+# modmat_pgg2 <- modmat_pgg[inx_lev2,]
+# npat_pgg2 = length(pgg_data2)
+# 
+# inx_lev3 <- which(pgg_data > 2)
+# pgg_data3 <- pgg_data[inx_lev3]
+# pgg_data3 <- ifelse(pgg_data3 == 3, 1, 0)
+# modmat_pgg3 <- modmat_pgg[inx_lev3,]
+# npat_pgg3 = length(pgg_data3)
+
+### marginal probabilities of cancers 
+# mean(pgg_data1)
+# mean(pgg_data2)
+# mean(pgg_data3)
+
+
+
+location.of.generated.files <- paste0(base.location, "generated-files-pgg-model-varyingsigma2/sequential_model")
 ## compare with original code
 get_stats <- function(x){a <- quantile(x, c(0.025, 0.975)); b<-mean(x); return(c(a[1], b, a[2]))}
 jags_int1 <- 
@@ -219,3 +273,11 @@ for(i in 1:nsim){
 
 quantile(calib, c(0.025, 0.5, 0.975))
 summary(calib)
+
+exp1 <- sum(apply(p_rc1, 1, mean))
+exp2 <- sum(apply(p_rc2, 1, mean))
+exp3 <- sum(apply(p_rc3, 1, mean))
+exp4 <- sum(apply(p_rc4, 1, mean))
+
+(obs1-exp1)^2/exp1 + (obs2-exp2)^2/exp2 + 
+  (obs3-exp3)^2/exp3 + (obs4-exp4)^2/exp4
