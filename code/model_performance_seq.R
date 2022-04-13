@@ -4,9 +4,22 @@ expit <- function(x)
 library("pROC")
 library("ROCR")
 library("splines")
-location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-seq"
+library("lme4")
+library("gtools")
+library("bayesm")
+library("rjags")
+library("R2jags")
+library("RCurl")
+library("readr")
+library("dplyr")
+location.of.r.scripts <- paste0("~/Downloads/prostate-active-surveillance-vDaan/R-scripts")
+location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-seq-addmri"
 load(paste(location.of.generated.files,"IOP-data-shaping-work-space.RData", sep="/"))
-
+options(warn=1)
+data.check <- function(condition, message){
+  if(condition==FALSE){print(paste(message, "Program terminated.", sep=" "))}
+  stopifnot(condition)}
+source(paste(location.of.r.scripts,"data-prep-for-jags-reform-addmri.R",sep="/"))
 #number of patients
 (n <- dim(pt.data)[1])
 
@@ -23,7 +36,7 @@ etahat<-as.matrix(etahat[,2:dim(etahat)[2]])
 K<-4 #number of classes
 (B<-dim(etahat)[1]) #length of saved posterior chain
 (N<-length(obs.eta))
-
+npat_cancer_known <- length(obs.eta)
 #mean eta predictions for patients with unknown cancer state
 pred_eta <- matrix(nrow=(n-npat_cancer_known), ncol=K)
 for(i in 1:(n-npat_cancer_known)){for(k in 1:K){
@@ -87,8 +100,8 @@ RC1 <- as.numeric(pgg_data>1)
 
 #AUC for RC predictions
 my.auc1<-performance(prediction(p_rc1, RC1), "auc")@y.values[[1]]  #0.887
-my.ci1<-ci.auc(response=RC1, predictor=p_rc1, method="bootstrap") #takes a long time! #0.85, 0.89
-my.auc1; my.ci1
+#my.ci1<-ci.auc(response=RC1, predictor=p_rc1, method="bootstrap") #takes a long time! #0.85, 0.89
+my.auc1 
 
 
 ## for PGG >2 ------------------
@@ -118,3 +131,83 @@ RC3 <- as.numeric(pgg_data>3)
 my.auc3<-performance(prediction(p_rc3, RC3), "auc")@y.values[[1]]  #0.887
 my.ci3<-ci.auc(response=RC3, predictor=p_rc3, method="bootstrap") #takes a long time! #0.85, 0.89
 my.auc3;my.ci3
+
+
+### Calibration for PGG
+exp1_pgg <- sum(1-p_rc1)
+exp2_pgg <- sum(p_rc1 -p_rc2)
+exp3_pgg <- sum(p_rc2 -p_rc3)
+exp4_pgg <- sum(p_rc3)
+get_chisq <- function(obs, exp){
+  (obs[1]-exp[1])^2/exp[1] + (obs[2]-exp[2])^2/exp[2] + 
+    (obs[3]-exp[3])^2/exp[3] + (obs[4]-exp[4])^2/exp[4]
+}
+obs1_pgg <- sum(pgg_data == 1)
+obs2_pgg <- sum(pgg_data == 2)
+obs3_pgg <- sum(pgg_data == 3)
+obs4_pgg <- sum(pgg_data == 4)
+obs_pgg <- c(obs1_pgg,obs2_pgg,obs3_pgg, obs4_pgg)
+exp_pgg <- c(exp1_pgg,exp2_pgg,exp3_pgg, exp4_pgg)
+get_chisq(obs_pgg, exp_pgg)
+#### Check eta ------------
+id_eta_obs <- pt.data$clinical_PTnum[!is.na(pt.data$true.pgg)]
+eta_obs <- pt.data$true.pgg[!is.na(pt.data$true.pgg)]
+inx_eta_obs <- which(!is.na(pt.data$true.pgg))
+V.ETA.data.obs <- V.ETA.data[inx_eta_obs,]
+#### sequential replaced model
+cancer_int1 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_int1-2022.csv")
+cancer_int2 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_int2-2022.csv")
+cancer_int3 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_int3-2022.csv")
+
+cancer_slope1 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_slope1-2022.csv")
+cancer_slope2 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_slope2-2022.csv")
+cancer_slope3 <- read_csv("generated-files-seq-addmri/jags-prediction-cancer_slope3-2022.csv")
+
+cancer_int1 <- cancer_int1[,-1];cancer_int2 <- cancer_int2[,-1];cancer_int3 <- cancer_int3[,-1]
+cancer_slope1 <- cancer_slope1[,-1];cancer_slope2 <- cancer_slope2[,-1];cancer_slope3 <- cancer_slope3[,-1]
+
+int1_mean <-apply(cancer_int1, 2, mean) 
+int2_mean <-apply(cancer_int2, 2, mean) 
+int3_mean <-apply(cancer_int3, 2, mean) 
+
+slope1_mean <-apply(cancer_slope1, 2, mean) 
+slope2_mean <-apply(cancer_slope2, 2, mean) 
+slope3_mean <-apply(cancer_slope3, 2, mean) 
+
+linpred1 <- int1_mean +  V.ETA.data.obs %*% slope1_mean
+p1_eta_seq <- exp(linpred1)/(1+exp(linpred1))
+
+linpred2 <- int2_mean +  V.ETA.data.obs %*% slope2_mean
+cond_p2_eta <- exp(linpred2)/(1+exp(linpred2))
+p2_eta_seq <- 1/(1+exp(linpred1)) * cond_p2_eta
+
+linpred3 <- int3_mean +  V.ETA.data.obs %*% slope3_mean
+cond_p3_eta <- exp(linpred3)/(1+exp(linpred3))
+p3_eta_seq <- 1/(1+exp(linpred1)) * 1/(1+exp(linpred2)) * cond_p3_eta
+
+p4_eta_seq <- 1-p1_eta_seq - p2_eta_seq - p3_eta_seq
+exp1 <- sum(p1_eta_seq)
+exp2 <- sum(p2_eta_seq)
+exp3 <- sum(p3_eta_seq)
+exp4 <- sum(p4_eta_seq)
+exp_eta_seq <- c(exp1, exp2, exp3, exp4)
+
+obs1 <- sum(eta_obs==1)
+obs2 <- sum(eta_obs==2)
+obs3 <- sum(eta_obs==3)
+obs4 <- sum(eta_obs==4)
+obs_eta_original <- c(obs1, obs2, obs3, obs4)
+get_chisq(obs_eta_original, exp_eta_seq)
+
+obs1_eta <- as.numeric(eta_obs <= 2)
+auc(obs1_eta, p1_eta_seq + p2_eta_seq)
+
+
+### How cancer affect pirads
+pirads_int <- read_csv("generated-files-seq-addmri/jags-prediction-pirads_int-2022.csv")
+pirads_slope <- read_csv("generated-files-seq-addmri/jags-prediction-pirads_slope-2022.csv")
+apply(pirads_int,2, mean)
+apply(pirads_slope,2, mean)
+
+
+

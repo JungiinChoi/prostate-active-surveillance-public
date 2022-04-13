@@ -197,20 +197,88 @@ get_chisq(obs_tot, exp_o_tot)
 get_chisq(obs_tot, exp_canrep_tot)
 get_chisq(obs_tot, exp_seq_tot)
 
-obs_tot <- data.frame(obs_tot);colnames(obs_tot) <- "N"; obs_tot$model <- "observed"
-exp_o_tot <- data.frame(exp_o_tot); colnames(exp_o_tot) <- "N";exp_o_tot$model <- "exp_original"
-exp_canrep_tot <- data.frame(exp_canrep_tot); colnames(exp_canrep_tot) <- "N";exp_canrep_tot$model <- "exp_cancer_replaced"
-exp_seq_tot <- data.frame(exp_seq_tot); colnames(exp_seq_tot) <- "N";exp_seq_tot$model <- "exp_both_replaced"
+### check AUC for latent cancer state (eta for patients with surgery) ------
+#### Yate's model
+rho_int <- read_csv("generated-files/jags-prediction-rho_int-2021.csv")
+rho_coef <- read_csv("generated-files/jags-prediction-rho_coef-2021.csv")
+rho_int <- rho_int[,-1]
+rho_coef <- rho_coef[,-1]
+rho_int_mean <-apply(rho_int, 2, mean) 
+rho_coef_mean <-matrix(apply(rho_coef, 2, mean))
 
-obs_tot$outcome <- exp_o_tot$outcome <- c("pgg=1", "pgg=2", "pgg=3", "pgg=4")
-exp_canrep_tot$outcome <- exp_seq_tot$outcome <- c("pgg=1", "pgg=2", "pgg=3", "pgg=4")
+source(paste("R-scripts","data-prep-for-jags.R",sep="/"))
+id_eta_obs <- pt.data$clinical_PTnum[!is.na(pt.data$true.pgg)]
+eta_obs <- pt.data$true.pgg[!is.na(pt.data$true.pgg)]
+inx_eta_obs <- which(!is.na(pt.data$true.pgg))
+V.ETA.data.obs <- V.ETA.data[inx_eta_obs,]
 
-bardat <- rbind(obs_tot,exp_o_tot,exp_canrep_tot,exp_seq_tot)
-bardat$model <- factor(bardat$model, levels = c("observed", "exp_original", "exp_cancer_replaced", "exp_both_replaced"))
-p1 <- ggplot(data = bardat %>% filter(outcome == "pgg=1"), aes(outcome, N, fill = model))+
-  geom_bar(stat ='identity', position = 'dodge')
+linpred1 <- rho_int_mean[1] -  V.ETA.data.obs %*% rho_coef_mean
+p1_eta <- exp(linpred1)/(1+exp(linpred1))
 
-p2 <- ggplot(data = bardat %>% filter(outcome != "pgg=1"), aes(outcome, N, fill = model))+
-  geom_bar(stat ='identity', position = 'dodge')
-library(gridExtra)
-grid.arrange(p1, p2, nrow= 1)
+linpred2 <- rho_int_mean[2] -  V.ETA.data.obs %*% rho_coef_mean
+cum_p2_eta <- exp(linpred2)/(1+exp(linpred2))
+p2_eta <- cum_p2_eta - p1_eta
+
+linpred3 <- rho_int_mean[3] -  V.ETA.data.obs %*% rho_coef_mean
+cum_p3_eta <- exp(linpred3)/(1+exp(linpred3))
+p3_eta <- cum_p3_eta - p1_eta - p2_eta
+
+p4_eta <- 1-cum_p3_eta
+
+obs1_eta <- as.numeric(eta_obs <= 2)
+auc(obs1_eta, as.numeric(p1_eta+p2_eta))
+
+obs1 <- sum(eta_obs==1); exp1 <- sum(p1_eta)
+obs2 <- sum(eta_obs==2); exp2 <- sum(p2_eta)
+obs3 <- sum(eta_obs==3); exp3 <- sum(p3_eta)
+obs4 <- sum(eta_obs==4); exp4 <- sum(p4_eta)
+obs_eta_original <- c(obs1, obs2, obs3, obs4)
+exp_eta_original <- c(exp1, exp2, exp3, exp4)
+get_chisq(obs_eta_original, exp_eta_original)
+
+#### sequential replaced model
+cancer_int1 <- read_csv("generated-files-seq/jags-prediction-cancer_int1-2022.csv")
+cancer_int2 <- read_csv("generated-files-seq/jags-prediction-cancer_int2-2022.csv")
+cancer_int3 <- read_csv("generated-files-seq/jags-prediction-cancer_int3-2022.csv")
+
+cancer_slope1 <- read_csv("generated-files-seq/jags-prediction-cancer_slope1-2022.csv")
+cancer_slope2 <- read_csv("generated-files-seq/jags-prediction-cancer_slope2-2022.csv")
+cancer_slope3 <- read_csv("generated-files-seq/jags-prediction-cancer_slope3-2022.csv")
+
+cancer_int1 <- cancer_int1[,-1];cancer_int2 <- cancer_int2[,-1];cancer_int3 <- cancer_int3[,-1]
+cancer_slope1 <- cancer_slope1[,-1];cancer_slope2 <- cancer_slope2[,-1];cancer_slope3 <- cancer_slope3[,-1]
+
+int1_mean <-apply(cancer_int1, 2, mean) 
+int2_mean <-apply(cancer_int2, 2, mean) 
+int3_mean <-apply(cancer_int3, 2, mean) 
+
+slope1_mean <-apply(cancer_slope1, 2, mean) 
+slope2_mean <-apply(cancer_slope2, 2, mean) 
+slope3_mean <-apply(cancer_slope3, 2, mean) 
+
+source(paste("R-scripts","data-prep-for-jags-reform.R",sep="/"))
+
+
+linpred1 <- int1_mean +  V.ETA.data.obs %*% slope1_mean
+p1_eta_seq <- exp(linpred1)/(1+exp(linpred1))
+
+linpred2 <- int2_mean +  V.ETA.data.obs %*% slope2_mean
+cond_p2_eta <- exp(linpred2)/(1+exp(linpred2))
+p2_eta_seq <- 1/(1+exp(linpred1)) * cond_p2_eta
+
+linpred3 <- int3_mean +  V.ETA.data.obs %*% slope3_mean
+cond_p3_eta <- exp(linpred3)/(1+exp(linpred3))
+p3_eta_seq <- 1/(1+exp(linpred1)) * 1/(1+exp(linpred2)) * cond_p3_eta
+
+p4_eta_seq <- 1-p1_eta_seq - p2_eta_seq - p3_eta_seq
+exp1 <- sum(p1_eta_seq)
+exp2 <- sum(p2_eta_seq)
+exp3 <- sum(p3_eta_seq)
+exp4 <- sum(p4_eta_seq)
+exp_eta_seq <- c(exp1, exp2, exp3, exp4)
+get_chisq(obs_eta_original, exp_eta_seq)
+
+obs1_eta <- as.numeric(eta_obs > 1)
+auc(obs1_eta, 1-p1_eta_seq)
+
+
