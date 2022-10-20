@@ -19,8 +19,8 @@ rm(list=ls())
 #### These will have to be adjusted by the user
 base.location <- "/users/zwang3/PAS/" #"/users/rcoley/jhas-epic/psa/psa-new/" #"/Users/ryc/Documents/inhealth/prediction-model/automated/for-TIC/"
 location.of.data <- paste0(base.location, "data")
-location.of.r.scripts <- paste0(base.location, "code-seq-mri-form2-nomainmri")
-location.of.generated.files <- paste0(base.location, "generated-files-cv-seq-mri-form2-nomainmri")
+location.of.r.scripts <- paste0(base.location, "code-seq-mri-form2-nomainmri-ind")
+location.of.generated.files <- paste0(base.location, "generated-files-cv-seq-mri-form2-nomainmri-ind")
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
 name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"

@@ -8,7 +8,7 @@
 #$ -M zwang238@jh.edu
 module load conda_R/4.0
 cd $PWD
-R CMD BATCH --no-save --no-restore code-seq-mri-form2-nomainmri/cv-to-run-jhpce-seed1.R 
+R CMD BATCH --no-save --no-restore code-seq-mri-form2-nomainmri-ind/cv-to-run-jhpce-seed1.R 
 
 
 

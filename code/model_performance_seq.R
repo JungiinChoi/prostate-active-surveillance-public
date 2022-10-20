@@ -12,14 +12,14 @@ library("R2jags")
 library("RCurl")
 library("readr")
 library("dplyr")
-location.of.r.scripts <- paste0("~/Downloads/prostate-active-surveillance-vDaan/R-scripts")
-location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-seq-addmri"
+location.of.r.scripts <- paste0("~/Downloads/prostate-active-surveillance-vDaan/R-script")
+location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-seq-mri-form2"
 load(paste(location.of.generated.files,"IOP-data-shaping-work-space.RData", sep="/"))
 options(warn=1)
 data.check <- function(condition, message){
   if(condition==FALSE){print(paste(message, "Program terminated.", sep=" "))}
   stopifnot(condition)}
-source(paste(location.of.r.scripts,"data-prep-for-jags-reform-addmri.R",sep="/"))
+source(paste(location.of.r.scripts,"data-prep-for-jags-seq-mri-form2.R",sep="/"))
 #number of patients
 (n <- dim(pt.data)[1])
 

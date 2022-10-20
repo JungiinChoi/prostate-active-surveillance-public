@@ -4,7 +4,7 @@ expit <- function(x)
 library("pROC")
 library("ROCR")
 library("splines")
-location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-cancerpom-replaced"
+location.of.generated.files <- "~/Downloads/prostate-active-surveillance-vDaan/generated-files-seq"
 load(paste(location.of.generated.files,"IOP-data-shaping-work-space.RData", sep="/"))
 
 #number of patients

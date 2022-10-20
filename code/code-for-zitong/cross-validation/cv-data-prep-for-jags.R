@@ -47,6 +47,7 @@ pt.data$cvgroup<-rep(0,n)
 for(group in 1:10){
   pt.data$cvgroup[my.sample[folds==group]]<-group}
 
+to.mask<- 1 ## 04/13/22 Zitong
 #save number of patients with true state to-be-masked
 (n_mask <- sum(pt.data$cvgroup==to.mask))
 
@@ -84,6 +85,7 @@ for(i in 1:n){bx.full$subj2[bx.full$subj==i]<-pt.data$subj2[pt.data$subj==i]}
 
 #covariate matrix for predictors of PGG
 #### NEED TO ADD MAT FOR RANDOM EFFECTS MODEL
+pt.data$dx.age.std <- scale(pt.data$dx.age)  ## 04/13/22 Zitong
 V.ETA.data <- as.matrix(cbind(pt.data$dx.age.std))
 d.V.ETA<-dim(V.ETA.data)[2]
 
