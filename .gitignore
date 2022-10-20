@@ -4,5 +4,5 @@
 .Ruserdata
 *.pdf
 *.RData
-*.data
+data/
 generated-files*/
