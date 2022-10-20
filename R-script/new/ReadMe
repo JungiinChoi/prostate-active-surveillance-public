@@ -1,0 +1,6 @@
+JAGS-prediction-model-seq-mri-moderator.txt: logitP(pgg = 1) w/ 1(eta >= 2)*1(mri)
+
+JAGS-prediction-model-seq-mri-moderator-form2.txt: logitP(pgg = 1) w/  1(eta >= 2) * 1(pirads >= 3)
+
+JAGS-prediction-model-seq-mri-moderator-form3.txt: logitP(pgg = 1) w/  (pirads - 2) * 1(eta >= 2) * 1(pirads >= 3)
+

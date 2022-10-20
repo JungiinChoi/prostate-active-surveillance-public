@@ -1,0 +1,24 @@
+#
+#$ -l h_fsize=50G
+#$ -cwd
+#$ -l mem_free=10G
+#$ -l h_vmem=50G
+#$ -m e
+#$ -N mri-outcome
+#$ -M zwang238@jh.edu
+module load conda_R/4.0
+cd $PWD
+R CMD BATCH --no-save --no-restore to-run-seq-mri-outcome.R 
+
+
+
+
+
+
+date
+echo "I am running on compute node:"
+hostname
+echo "Sleeping 30 seconds..."
+sleep 30
+date
+
