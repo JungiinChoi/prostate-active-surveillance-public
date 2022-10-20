@@ -1,4 +1,8 @@
 .Rproj.user
 .Rhistory
-.RData
+.DS_Store
 .Ruserdata
+*.pdf
+*.RData
+*.data
+generated-files*/
