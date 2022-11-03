@@ -1,12 +1,9 @@
-cat("
-model {
-
+cat(
+"model {
 
 ###PRIORS FOR LATENT CLASS MODEL
 
 # priors for sequential model for ordinal eta as outcome
-cancer_inv_sigma_sq ~ dgamma(alpha, beta)
-cancer_sigma_sq <- 1/cancer_inv_sigma_sq
 for (index in 1:npred_cancer) {
   cancer_coef_mean[index] ~ dnorm(0,1)
 }
@@ -14,9 +11,9 @@ cancer_int1 ~ dnorm(-0.16, 1)
 cancer_int2 ~ dnorm(0.71, 1)
 cancer_int3 ~ dnorm(1.15, 1)
 for(index in 1:npred_cancer) {
-  cancer_slope1[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
-  cancer_slope2[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
-  cancer_slope3[index] ~ dnorm(cancer_coef_mean[index], cancer_inv_sigma_sq)
+  cancer_slope1[index] ~ dnorm(cancer_coef_mean[index], 1)
+  cancer_slope2[index] ~ dnorm(cancer_coef_mean[index], 1)
+  cancer_slope3[index] ~ dnorm(cancer_coef_mean[index], 1)
 }
 
 
@@ -61,34 +58,41 @@ for(index in 1:npred_fixef_psa) {
 
 
 ##proportional odds regression for biopsy grade
-pgg_inv_sigma_sq ~ dgamma(alpha, beta)
-pgg_sigma_sq <- 1/cancer_inv_sigma_sq
 for (index in 1:npred_pgg) {
   pgg_coef_mean[index] ~ dnorm(0,1)
 }
-for (index in (npred_pgg + 1):(npred_pgg + 2*(nlevel_cancer - 1))) {
-  pgg_coef_mean[index] ~ dnorm(0,1)T(-1,)
+for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
+  pgg_coef_mean[index] ~ dnorm(0,1)
 }
+",
+if(mri_role %in% c("moderator", "both")){"pgg_coef_mean[npred_pgg + nlevel_cancer] ~ dnorm(0,1)"},
+
+"\n
 pgg_int1 ~ dnorm(-0.16, 1) 
 pgg_int2 ~ dnorm(0.71, 1)
 pgg_int3 ~ dnorm(1.15, 1)
 for(index in 1:npred_pgg) {
-  pgg_slope1[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
-  pgg_slope2[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
-  pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)
+  pgg_slope1[index] ~ dnorm(pgg_coef_mean[index], 1)
+  pgg_slope2[index] ~ dnorm(pgg_coef_mean[index], 1)
+  pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], 1)
 }
-for (index in (npred_pgg + 1):(npred_pgg + 2*(nlevel_cancer - 1))) {
-  pgg_slope1[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)T(-1,)
-  pgg_slope2[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)T(-1,)
-  pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], pgg_inv_sigma_sq)T(-1,)
-}
+for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
+  pgg_slope1[index] ~ dnorm(pgg_coef_mean[index], 1)
+  pgg_slope2[index] ~ dnorm(pgg_coef_mean[index], 1)
+  pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], 1)
+}",
 
+if(mri_role %in% c("moderator", "both")){
+  "
+  pgg_slope1[npred_pgg + nlevel_cancer] ~ dnorm(pgg_coef_mean[npred_pgg + nlevel_cancer],1)
+  pgg_slope2[npred_pgg + nlevel_cancer] ~ dnorm(pgg_coef_mean[npred_pgg + nlevel_cancer],1)
+  pgg_slope3[npred_pgg + nlevel_cancer] ~ dnorm(pgg_coef_mean[npred_pgg + nlevel_cancer],1)"
+},
+
+"
 
 ###LIKELIHOOD
-
-
-##latent variable for true cancer state
-##sequential logistic regression
+##latent variable for true cancer state (sequential logistic regression)
 for(j in 1:npat){ 
   exponent1[j] <- cancer_int1 + inprod(cancer_slope1[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
   exponent2[j] <- cancer_int2 + inprod(cancer_slope2[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
@@ -135,8 +139,6 @@ for(j in 1:nobs_psa){
 	log_psa_data[j] ~ dnorm(mu_obs_psa[j], tau_res) 
 }
 
-
-
 ### BIOPSY OUTCOMES AND SURGERY RECEIVED
 
 ##proportional odds regression for biopsy upgrading
@@ -146,35 +148,31 @@ for(j in 1:npat_pgg){
 	               pgg_slope1[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope1[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
   if(mri_role %in% c("moderator", "both")){
-    "+ pgg_slope1[(npred_pgg + 4)] * 
-       (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * 
-       (step(eta[pgg_patient_index_map[j]] - 2)-(1-step(eta[pgg_patient_index_map[j]] - 2))) * 
-       step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
-	     ## logitP(pgg = 1) w/  (pirads - 2)*[1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
+    "+ pgg_slope1[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 2)-(1-step(eta[pgg_patient_index_map[j]] - 2))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
+    ## logitP(pgg = 1) w/  (pirads - 2)*[1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
   },
-  "pgg_exp2[j] <- pgg_int2 + inprod(pgg_slope2[1:npred_pgg], modmat_pgg[j,1:npred_pgg])+
+  "
+  pgg_exp2[j] <- pgg_int2 + inprod(pgg_slope2[1:npred_pgg], modmat_pgg[j,1:npred_pgg])+
 	               pgg_slope2[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
 	               pgg_slope2[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope2[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
   if(mri_role %in% c("moderator", "both")){
-    "+ pgg_slope2[(npred_pgg + 4)] * 
-      (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * 
-      (step(eta[pgg_patient_index_map[j]] - 3)-(1-step(eta[pgg_patient_index_map[j]] - 3))) * 
-       step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
+    "+ pgg_slope2[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 3)-(1-step(eta[pgg_patient_index_map[j]] - 3))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
 	     ## logitP(pgg = 2|pgg >=2) w/ (pirads - 2)*[1(eta >= 3)-1(eta<=2)]*1(pirads >= 3)"
   },
- "pgg_exp3[j] <- pgg_int3 + inprod(pgg_slope3[1:npred_pgg], modmat_pgg[j,1:npred_pgg])+
+ "
+ pgg_exp3[j] <- pgg_int3 + inprod(pgg_slope3[1:npred_pgg], modmat_pgg[j,1:npred_pgg])+
 	               pgg_slope3[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
 	               pgg_slope3[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope3[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
   if(mri_role %in% c("moderator", "both")){
-    "+ pgg_slope3[(npred_pgg + 4)] * 
-    (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * 
-    (step(eta[pgg_patient_index_map[j]] - 4)-(1-step(eta[pgg_patient_index_map[j]] - 4))) * 
+    "+ pgg_slope3[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 4)-(1-step(eta[pgg_patient_index_map[j]] - 4))) * 
     step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
 	   ## logitP(pgg =3|pgg>=3) w/ (pirads - 2)*[1(eta >= 4)-1(eta<=3)]*1(pirads >= 3)"
   },
-  "p_pgg[j, 1] <- exp(pgg_exp1[j])/(1+exp(pgg_exp1[j]))
+  "
+  
+  p_pgg[j, 1] <- exp(pgg_exp1[j])/(1+exp(pgg_exp1[j]))
   p_pgg[j, 2] <- 1/(1+exp(pgg_exp1[j])) * exp(pgg_exp2[j])/(1+exp(pgg_exp2[j]))
   p_pgg[j, 3] <- 1/(1+exp(pgg_exp1[j])) * 1/(1+exp(pgg_exp2[j])) * exp(pgg_exp3[j])/(1+exp(pgg_exp3[j]))
   p_pgg[j, 4] <- 1- p_pgg[j, 1] - p_pgg[j, 2] - p_pgg[j, 3]
@@ -217,9 +215,11 @@ for(j in 1:npat_pirads){
 
 for(i in 1:npat_pirads) {
   pirads_data[i] ~ dcat(p_pirads[i,1:(nlevel_cancer-1)])
-  }
-",
+  }"
+},
 
 "}",
-  file = paste(location.of.r.scripts, 
-               "JAGS-prediction-model.txt", sep="/"))
+  file = paste(location.of.r.scripts,
+               paste0("JAGS-prediction-model-",mri_role,".txt"), sep="/"))
+
+
