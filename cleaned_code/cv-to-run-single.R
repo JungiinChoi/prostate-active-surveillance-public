@@ -18,7 +18,7 @@ mri_role <- "both" #moderator, both, outcome, 0
 
 ### 2. Define directories, file names
 #### These will have to be adjusted by the user
-base.location <- '~/Downloads/prostate-active-surveillance-vDaan/' 
+base.location <- '/users/zwang3/PAS_clean/' 
 location.of.data <- paste0(base.location, "data")
 location.of.r.scripts <- paste0(base.location, "cleaned_code")
 location.of.generated.files <- paste0(base.location, "cleaned_code/generated-files-cv")
@@ -51,7 +51,7 @@ data.check <- function(condition, message){
   stopifnot(condition)}
 
 #source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/"))
-load("~/Downloads/prostate-active-surveillance-vDaan/generated-files-cv/IOP-data-shaping-work-space.RData")
+load(paste0(location.of.r.scripts, "/IOP-data-shaping-work-space.RData"))
 
 
   to.mask<- to_mask

@@ -15,5 +15,5 @@ for to_mask in 11 2 3 4 5 6 7 8 9 10; do
       -e $log_file_name `# Direct errors` \
       -m e -M zwang238@jh.edu `# Send an email when the job completes or aborts` \
       -v to_mask=${to_mask},job_name=${job_name} `# Assign variables to be passed to the bash script` \
-      run_single_simulation.sh
+      submit_single_cv.sh
 done
