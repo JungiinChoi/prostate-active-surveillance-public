@@ -119,7 +119,7 @@ inits <- function(){
 }
 
 ### 3. Define parameters to be tracked ---------------
-params <- c("eta.hat",
+params <- c("eta.track",
             "cancer_int1", "cancer_int2", "cancer_int3",
             "cancer_slope1", "cancer_slope2", "cancer_slope3", 
             "cancer_state",
