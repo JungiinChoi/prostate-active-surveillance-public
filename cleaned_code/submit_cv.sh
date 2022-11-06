@@ -1,12 +1,11 @@
 node_name='shared.q@compute-*'
-mem_gb_free=1
-n_core=2
+mem_gb_free=10
+n_core=1
 
-for sample_size in 1000 4000 16000; do
-  for method_type in 'old' 'new'; do
-    job_name="${method_type}_method_simulation_with_${sample_size}_observations"
-    mkdir -p "${HOME}/simulation_log" # Make a directory if non-existent
-    log_file_name="${HOME}/simulation_log/${job_name}_qsub_log.txt"
+for to_mask in 11 2 3 4 5 6 7 8 9 10; do
+    job_name="cv${to_mask}"
+    mkdir -p "${HOME}/generated-files-cv" # Make a directory if non-existent
+    log_file_name="${HOME}/generated-files-cv/${job_name}_qsub_log.txt"
     qsub \
       -q "${node_name}" `# If you need a specific node` \
       -l mem_free="${mem_gb_free}G",h_vmem="${mem_gb_free}G" `# Specify memory requirement` \
@@ -14,8 +13,7 @@ for sample_size in 1000 4000 16000; do
       -N $job_name `# Give a human-readable name to the submitted job so that you can find it later` \
       -o $log_file_name `# Direct output messages` \
       -e $log_file_name `# Direct errors` \
-      -m e -M your.email@jh.edu `# Send an email when the job completes or aborts` \
-      -v method_type=${method_type},sample_size=${sample_size},job_name=${job_name} `# Assign variables to be passed to the bash script` \
+      -m e -M zwang238@jh.edu `# Send an email when the job completes or aborts` \
+      -v to_mask=${to_mask},job_name=${job_name} `# Assign variables to be passed to the bash script` \
       run_single_simulation.sh
-  done
 done

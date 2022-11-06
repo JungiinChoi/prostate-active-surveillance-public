@@ -54,7 +54,7 @@ data.check <- function(condition, message){
 load("~/Downloads/prostate-active-surveillance-vDaan/generated-files-cv/IOP-data-shaping-work-space.RData")
 
 
-  to.mask<- to.mask
+  to.mask<- to_mask
   #Load tidied/shaped data; further shaping for JAGS
   source(paste(location.of.r.scripts,"cv-data-prep-for-jags.R",sep="/"))
   
