@@ -1,7 +1,7 @@
 .Rproj.user
 .Rhistory
 .DS_Store
-*/.DS_Store
+**/.DS_Store
 .Ruserdata
 *.pdf
 *.RData
