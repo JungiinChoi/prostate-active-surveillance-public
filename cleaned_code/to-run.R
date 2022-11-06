@@ -36,6 +36,7 @@ data.check <- function(condition, message){
   stopifnot(condition)}
 
 #Load data; tidy, check, and shape
+#source(paste(location.of.r.scripts,"data-load-check-and-shaping.R",sep="/")) #need to rerun this with new data
 load(paste(location.of.r.scripts,"IOP-data-shaping-work-space.RData",sep="/"))
 
 #Load tidied/shaped data; further shaping for JAGS
