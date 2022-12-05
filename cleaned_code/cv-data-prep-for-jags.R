@@ -1,7 +1,7 @@
 ########### SEED/GROUP TO MASK IS EITHER SET HERE OR IN EXAMPLE-CV-TO-RUN.R
 #### This should be adjusted by the user depending on how seed, masking set 
 # SEED <- as.numeric(Sys.getenv("SGE_TASK_ID"))
-# # For GAP3 analysis, make this seed=1,...,10 and define grouping variable with values 1,...,10 
+# # For GAP3 analysis, make this seed=1,...,K and define grouping variable with values 1,...,K 
 # to.mask<- SEED
 ###########
 
@@ -12,7 +12,7 @@
 # 2019 January 08, modified 2019 January 30
 # This script will take tidied/shaped AS data and perform additional manipulation for the JAGS model
 # I've put a lot of data checks in here as fail-safes, but there shouldn't be any missing values after running the previous script.
-# This updated from data-prep-for-jags.R to accomodated 10-fold CV 
+# This updated from data-prep-for-jags.R to accomodated K-fold CV 
 
 #### WORKFLOW
 ### 1. Format pt-level data for JAGS run
@@ -40,15 +40,21 @@ cancer_data_true <- pt.data$true.pgg[!is.na(pt.data$true.pgg)]
 npat_cancer_known <- length(cancer_data_true)
 
 ### removing true state observation for CV leave-one-out fold
-# assign CV groups for 10 folds
+# assign CV groups for K folds
 set.seed(44)
 my.sample <- sample(1:npat_cancer_known)
-folds <- cut(seq(1, npat_cancer_known), breaks=10, labels=F)
+folds <- cut(seq(1, npat_cancer_known), breaks=K, labels=F)
 
 n <- npat
 pt.data$cvgroup<-rep(0,n)
-for(group in 1:10){
+for(group in 1:K){
   pt.data$cvgroup[my.sample[folds==group]]<-group}
+
+#save number of patients with true state to-be-masked
+if (K>1){
+  for (group in 1:K){
+    pt.data$cvgroup[my.sample[folds==group]]<-group}
+}
 
 #save number of patients with true state to-be-masked
 (n_mask <- sum(pt.data$cvgroup==to.mask))
