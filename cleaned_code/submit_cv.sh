@@ -2,7 +2,7 @@ node_name='shared.q@compute-*'
 mem_gb_free=10
 n_core=1
 
-for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
+for ((to_mask=1; to_mask<=${1:-1}; to_mask++)) do
     job_name="cv${to_mask}"
     mkdir -p "${HOME}/generated-files-cv" # Make a directory if non-existent
     log_file_name="${HOME}/generated-files-cv/${job_name}_qsub_log.txt"

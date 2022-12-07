@@ -77,10 +77,6 @@ load(paste0(location.of.r.scripts, "/IOP-data-shaping-work-space.RData"))
   	write.csv(out$sims.list[[j]],
   	          paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",seed,".csv",sep=""))
   }
-  # write.csv(out$sims.list$eta.track, 
-  #           paste0(location.of.generated.files,"/eta-fitted-",to.mask,".csv"))
-
-
 
 
 

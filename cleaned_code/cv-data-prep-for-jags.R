@@ -43,16 +43,14 @@ npat_cancer_known <- length(cancer_data_true)
 # assign CV groups for K folds
 set.seed(44)
 my.sample <- sample(1:npat_cancer_known)
-folds <- cut(seq(1, npat_cancer_known), breaks=K, labels=F)
 
 n <- npat
 pt.data$cvgroup<-rep(0,n)
-for(group in 1:K){
-  pt.data$cvgroup[my.sample[folds==group]]<-group}
 
 #save number of patients with true state to-be-masked
-if (K>1){
+if (K > 1){
   for (group in 1:K){
+    folds <- cut(seq(1, npat_cancer_known), breaks=K, labels=F)
     pt.data$cvgroup[my.sample[folds==group]]<-group}
 }
 
@@ -87,7 +85,6 @@ psa.data$subj2<-vector(length=dim(psa.data)[1])
 for(i in 1:n){psa.data$subj2[psa.data$subj==i]<-pt.data$subj2[pt.data$subj==i]}
 bx.full$subj2<-vector(length=dim(bx.full)[1])
 for(i in 1:n){bx.full$subj2[bx.full$subj==i]<-pt.data$subj2[pt.data$subj==i]}
-
 
 
 
