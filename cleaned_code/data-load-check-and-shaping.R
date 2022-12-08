@@ -791,7 +791,7 @@ names(bx.full) <- c("subj", "time.int")
 #add numeric date and age at start of interval and at time of biopsy; add whether bx was performed during interval; add bx findings
 bx.full$int.dt.num <- bx.full$int.age <- vector(length=N)
 bx.full$bx.time <- bx.full$bx.dt.num <- bx.full$bx.age <- vector(length=N)
-bx.full$bx.here <- bx.full$num.bx<- vector(length=N)
+bx.full$bx.here <- bx.full$num.bx<- vector(length=N) ## bx.here indicates whether there was biopsy occured in that time interval 111422 Zitong
 bx.full$rc <- bx.full$pgg <-  vector(length=N)
 bx.full$bx.time.min <- bx.full$bx.dt.num.min <- bx.full$bx.age.min <- rep(NA, N) #for intervals with 2 bx
 bx.full$npc <- bx.full$mpc <- bx.full$ncs <- bx.full$mri <- vector(length=N)
