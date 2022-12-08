@@ -7,3 +7,5 @@
 *.RData
 data/
 generated-files*/
+code_misc/
+*.csv
