@@ -39,7 +39,7 @@ data.check <- function(condition, message){
 
 
 
-### 1. Load all data files. Rename unique id.
+### 1. Load all data files. Rename unique id. ----------
 demo.data <- read.csv(paste(location.of.data, name.of.pt.data, sep="/"))
 bx.data <- read.csv(paste(location.of.data, name.of.bx.data, sep="/"))
 psa.data <- read.csv(paste(location.of.data, name.of.psa.data, sep="/"))
@@ -75,7 +75,7 @@ data.check(condition=as.logical(0==sum(is.na(tx.data$clinical_PTnum))),
 
 
 
-### 2. Start pt.data file. Include dob, date of death.
+### 2. Start pt.data file. Include dob, date of death.--------
 pt.data <- as.data.frame(demo.data$id)
 names(pt.data) <- "id"
 pt.data$clinical_PTnum <- demo.data$clinical_PTnum #want to keep this for referencing patients later
@@ -107,7 +107,7 @@ data.check(condition=as.logical(sum(demo.data$Date_of_death=="")==sum(is.na(pt.d
 
 
 
-### 3. Identify diagnostic biopsy for all patients. Limit analysis to patients with GS<7 at dx. Put bx dx date (and age) into pt.data.
+### 3. Identify diagnostic biopsy for all patients. Limit analysis to patients with GS<7 at dx. Put bx dx date (and age) into pt.data.------------
 #define vector used to indicate records for removal
 pt.data$rm <- rep(0,n)
 
@@ -129,6 +129,7 @@ n_bx <- dim(bx.data)[1]
 
 #remove pts with dx bx GS>6
 #### In my version of the data, missing GS are coded with "" not NA
+bx.data$gleason[is.na(bx.data$gleason)] <- "" # 110622 Zitong recode missing gleason to keep consistency with Coley
 warning(paste0("Gleason score is missing for ", sum(bx.data$gleason==""), " biopsies. ", sum(bx.data$NumPosCores>0 & bx.data$gleason=="" & !is.na(bx.data$NumPosCores)), " of these biopsies had at least one positive core found. Analysis continues under the assumption that none of these biopsies were grade reclassifications."))
 
 #make a variable for grade reclassification
@@ -191,10 +192,14 @@ pt.data$lr.vol[pt.data$lr.vol.miss==1]<-1
 
 
 #numeric date for all bx; numeric date of dx bx into pt.data
-bx.data$bx.dt.num <- as.numeric(as.Date(bx.data$Biopsy_Date,"%m/%d/%y"))
+head(bx.data$Biopsy_Date)
+# bx.data$bx.dt.num <- as.numeric(as.Date(bx.data$Biopsy_Date,"%d-%b-%y"))
+bx.data$bx.dt.num <- as.numeric(as.Date(bx.data$Biopsy_Date,"%m/%d/%y")) #112522 Zitong fix biopsy date format for current dataset
+if(sum(is.na(bx.data$bx.dt.num))>0){
+  stop("Incorrect biopsy data Biopsy_Date format")}
 pt.data$dx.dt.num <- rep(0,n)
 for(i in 1:n){
-	pt.data$dx.dt.num[i] <- bx.data$bx.dt.num[bx.data$id==pt.data$id[i] & bx.data$Which_Biopsy=="D"]}
+  pt.data$dx.dt.num[i] <- bx.data$bx.dt.num[bx.data$id==pt.data$id[i] & bx.data$Which_Biopsy=="D"]}
 ##### could put some checks here- e.g. bx can't occur after death
 
 #patient age at dx
@@ -203,7 +208,7 @@ pt.data$dx.age <- (pt.data$dx.dt.num-pt.data$dob.num)/365
 
 
 
-### 4. Treatment data: Remove pts removed from pt.data; remove records without date; only keep 1st tx per pt. Put tx date, type of tx, and post-surgery GS in pt.data
+### 4. Treatment data: Remove pts removed from pt.data; remove records without date; only keep 1st tx per pt. Put tx date, type of tx, and post-surgery GS in pt.data ----------------
 #remove pts removed from pt.data
 tx.data <- tx.data[tx.data$id %in% pt.data$id,]
 
@@ -262,7 +267,7 @@ for(i in 1:n){
 
 
 
-### 5. PSA data- remove patients removed from pt.data; remove records without value or date; make PSA date numeric; calculate time since diagnosis and age at PSA; remove PSA dates after treatment; remove patients with less than 2 PSA tests; log-transform PSA; pull prostate volume data from bx.data; record date of last PSA test
+### 5. PSA data- remove patients removed from pt.data; remove records without value or date; make PSA date numeric; calculate time since diagnosis and age at PSA; remove PSA dates after treatment; remove patients with less than 2 PSA tests; log-transform PSA; pull prostate volume data from bx.data; record date of last PSA test ----------
 #remove PSA observations more than 1 year prior to dx bx
 psa.data <- psa.data[psa.data$id %in% pt.data$id,]
 psa.data <- psa.data[!is.na(psa.data$Total_PSA),]
@@ -345,7 +350,7 @@ for(i in 1:n){
 
 
 
-### 6 Biopsy data- remove records from patients removed due to PSA criteria; Remove any records with missing biopsy date; Calculate time since diagnosis and remove observations prior to dx or after tx; Define bx PGG results; Move RC data, RC and final biopsy date to pt.data; remove biopsies that occur after initial reclassification; tidy NPC and MPC data
+### 6 Biopsy data- remove records from patients removed due to PSA criteria; Remove any records with missing biopsy date; Calculate time since diagnosis and remove observations prior to dx or after tx; Define bx PGG results; Move RC data, RC and final biopsy date to pt.data; remove biopsies that occur after initial reclassification; tidy NPC and MPC data ------------
 
 #remove records from patients removed due to PSA criteria
 bx.data <- bx.data[bx.data$id%in%pt.data$id,]
@@ -636,6 +641,12 @@ if(sum(is.na(bx.data$mritargetedbx))>0){
   warning(paste0(sum(is.na(bx.data$mritargetedbx)),
                  " biopsies are missing information for mritargetedbx. We will assume that the biopsies were not performed with MRI.")) }
 
+#MRI-targeted biopsy assign specific pirads score to mri targeted bxs 1126 Zitong
+if(sum(bx.data$max_pirads>5, na.rm = T)>0){
+  warning(paste0(sum(bx.data$max_pirads>5, na.rm = T),
+                 " biopsies have max pirads > 5. Check data entry error. ")) }
+
+
 
 ##Number of cores sampled
 #rename for brevity and so that original data are preserved
@@ -644,6 +655,7 @@ bx.data$ncs<-bx.data$NumCoreSampled
 #hist(bx.data$ncs)
 
 #assign likely number of cores where data are missing
+#bx.data$ncs[bx.data$ncs == 0] <- NA #110622 Zitong - recode NA values to ncs = 0, for adapting new data
 sum(is.na(bx.data$ncs))
 ncs6.date<-as.numeric(as.Date("1/1/03","%m/%d/%y"))
 
@@ -700,7 +712,7 @@ for(i in 1:n){
 
 
 
-### 7. Calculate total follow-up time. Categorize patients based on outcomes, LTF
+### 7. Calculate total follow-up time. Categorize patients based on outcomes, LTF ----------
 
 pt.data$time.fup <- rep(0,n) #total time of follow-up (use for making annual interval dataframe)
 pt.data$active <- rep(0,n) # have not had RC or surgery; have had bx or PSA within 2 years of data pull
@@ -760,7 +772,7 @@ data.check(condition=as.logical(sum(!is.na(pt.data$time.until.tx) & !pt.data$tim
 
 
 
-### 8. Order patients based on observed eta
+### 8. Order patients based on observed eta --------
 #### The need to order patient data in this way is an artifact of JAGS indexing requirements
 ordered<-order(pt.data$true.pgg)
 pt.data<-pt.data[ordered,]
@@ -774,7 +786,8 @@ for(i in 1:n){
 
 
 
-### 9. Shaping biopsy data. Put data into annual intervals
+### 9. Shaping biopsy data. Put data into annual intervals ----------
+#112622 Zitong - this section is modified to include mritargeted bx pirads score for new data
 
 #create dataframe with one row per patient per year under observation, including dx bx
 bx.subj <- rep(1, (ceiling(pt.data$time.fup[pt.data$subj==1]) + 1) )
@@ -797,6 +810,7 @@ bx.full$bx.time.min <- bx.full$bx.dt.num.min <- bx.full$bx.age.min <- rep(NA, N)
 bx.full$npc <- bx.full$mpc <- bx.full$ncs <- bx.full$mri <- vector(length=N)
 bx.full$npc.min <- bx.full$mpc.min <- bx.full$ncs.min <- bx.full$mri.min <- vector(length=N)
 bx.full$lat <- bx.full$lat.min <- vector(length=N)
+bx.full$pirads <- vector(length=N) #1126 Zitong
 
 #data at time=0
 bx.full$bx.time[bx.full$time.int==0] <- 0
@@ -810,6 +824,9 @@ for(i in 1:n){
 	bx.full$ncs[bx.full$subj==pt.data$subj[i] & bx.full$time.int==0] <- bx.data$ncs[bx.data$subj==pt.data$subj[i] & bx.data$Which_Biopsy=="D"]
 	bx.full$mri[bx.full$subj==pt.data$subj[i] & bx.full$time.int==0] <- bx.data$mri[bx.data$subj==pt.data$subj[i] & bx.data$Which_Biopsy=="D"]
 	bx.full$lat[bx.full$subj==pt.data$subj[i] & bx.full$time.int==0] <- bx.data$lat[bx.data$subj==pt.data$subj[i] & bx.data$Which_Biopsy=="D"]
+  if(date.pull == as.numeric(as.Date("2022-11-07"))){ #if new data
+    bx.full$pirads[bx.full$subj==pt.data$subj[i] & bx.full$time.int==0] <- bx.data$max_pirads[bx.data$subj==pt.data$subj[i] & bx.data$Which_Biopsy=="D"] #1126 Zitong
+  }
 }
 
 #variable values that do not depend on patient biopsy data, just pt.data
@@ -844,8 +861,9 @@ for(j in 1:N){
 						bx.full$ncs[j] <- bx.data$ncs[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time[j]]
 						bx.full$mri[j] <- bx.data$mri[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time[j]]
 						bx.full$lat[j] <- bx.data$lat[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time[j]]
-
-
+						if(date.pull == as.numeric(as.Date("2022-11-07"))){ #if new data
+						bx.full$pirads[j] <- bx.data$max_pirads[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time[j]] ##1126 Zitong
+						}
 			if(bx.full$num.bx[j]>1){ #patients with multiple biopsies
 				bx.full$bx.time.min[j] <- min(bx.data$time.since.dx[bx.data$use==1])
 				bx.full$bx.dt.num.min[j] <- min(bx.data$bx.dt.num[bx.data$use==1])
@@ -856,6 +874,9 @@ for(j in 1:N){
 				bx.full$ncs.min[j] <- bx.data$ncs[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time.min[j]]
 				bx.full$mri.min[j] <- bx.data$mri[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time.min[j]]
 				bx.full$lat.min[j] <- bx.data$lat[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time.min[j]]
+				if(date.pull == as.numeric(as.Date("2022-11-07"))){ #if new data
+				bx.full$pirads.min[j] <- bx.data$max_pirads[bx.data$use==1 & bx.data$time.since.dx==bx.full$bx.time.min[j]]##1126 Zitong
+				}
 			} #we know that rc=0 at this bx bc all bx after rc were removed from dataset
 
 		}
@@ -866,7 +887,9 @@ for(j in 1:N){
 			  bx.full$npc[j] <- bx.full$mpc[j] <- bx.full$npc.min[j] <- bx.full$mpc.min[j] <-
 			  bx.full$ncs[j] <- bx.full$mri[j] <- bx.full$ncs.min[j] <- bx.full$mri.min[j] <-
 			  bx.full$lat[j] <- bx.full$lat.min[j] <- NA
-
+			  if(date.pull == as.numeric(as.Date("2022-11-07"))){ #if new data
+			    bx.full$pirads[j] <- bx.full$pirads.min[j] <-  NA ##1126 Zitong
+		  	}
 			bx.full$bx.here[j] <- bx.full$num.bx[j] <- 0 }	}
 } #
 
@@ -1144,11 +1167,28 @@ bx.full$psa.traj.bx[is.na(bx.full$psa.traj.bx)]<-0
 bx.full$psa.traj.surg[is.na(bx.full$psa.traj.surg)]<-0
 
 
+### 10. add MRI data with MRI findings --------------
+###Zitong 113022
+mri.data <- read_csv(paste(location.of.data, name.of.mri.data, sep = "/"))
+
+if(date.pull == as.numeric(as.Date("2022-11-07"))){
+mri.find.data <- read_csv(paste(location.of.data, name.of.mri.findings.data, sep = "/"))
+(mri.prob <- problems(x=.Last.value))
+mri.data[mri.prob$row-1, mri.prob$col] <- as.numeric(gsub("\\.00|,", "", mri.prob$actual))
+mri.data.new <- mri.data %>% left_join(mri.find.data, by = "mri_id")
+#assign all missing pirads but no_measurable_disease=1 to have pirads 1
+mri.data.new<- mri.data.new %>% mutate(pirads_update  = 
+                                         ifelse(is.na(pirads) & no_measurable_disease == 1, 
+                                                1,
+                                                pirads))
+}else{
+  mri.data.new <- mri.data
+}
 
 
 # ### 11. Save data
-save(pt.data, psa.data, bx.full,
-     file=paste0(location.of.generated.files,"/IOP-data-shaping-work-space.RData"))
+save(pt.data, psa.data, bx.full,mri.data.new,
+     file=paste0(location.of.generated.files,"/IOP-data-shaping-work-space-6.15-withMRI.RData"))
 
 #clean-up workspace
 rm(bx.data, bx.subj, bx.time, d,  demo.data, i, j, max.fup, max.time.until.surg, n, N, n_psa, n_bx, n_tx, ordered, psa.use.bx, psa.use.surg, rc.time, rm.id, sum.use, times.use)
