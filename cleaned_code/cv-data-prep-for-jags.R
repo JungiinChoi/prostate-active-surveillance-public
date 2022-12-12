@@ -202,9 +202,8 @@ data.check(condition=as.logical(sum(is.na(V.PGG.data))==0), message="Missing bio
 
 ### 6. Format MRI data for JAGS run -------------
 ## formate MRI data for outcome model
-mri_data_615 <- read_csv(paste0(base.location, "data/", name.of.mri.data))
 my.max <- function(x) ifelse( !all(is.na(x)), max(x, na.rm=T), NA)
-mri_data <- mri_data_615 %>% 
+mri_data <- mri.data.new %>% 
   dplyr::select(clinical_ptnum, pirads) %>% 
   group_by(clinical_ptnum) %>% 
   summarize(pirads_max = my.max(pirads))
