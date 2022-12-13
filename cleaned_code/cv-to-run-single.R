@@ -25,13 +25,13 @@ workdir <- args[4]
 #workdir <- "/users/zwang3/PAS_11722"
 base.location <- workdir
 location.of.data <- paste0(base.location, "/data")
-location.of.r.scripts <- paste0(base.location, "/code")
-location.of.generated.files <- paste0(base.location, "/generated-files-sh")
+location.of.r.scripts <- paste0(base.location, "/cleaned_code")
+location.of.generated.files <- paste0(base.location, "/generated-files-cv")
 
-base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/"
-location.of.data <- paste0(base.location, "data")
-location.of.r.scripts <- paste0(base.location, "code")
-location.of.generated.files <- paste0(base.location, "generated-files-sh")
+# base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/"
+# location.of.data <- paste0(base.location, "data")
+# location.of.r.scripts <- paste0(base.location, "cleaned_code")
+# location.of.generated.files <- paste0(base.location, "generated-files-sh")
 
 
 name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
@@ -63,7 +63,7 @@ data.check <- function(condition, message){
 
 #Load data; tidy, check, and shape
 #source("model/data-load-check-and-shaping.R") #need to rerun this with new data
-load(paste(location.of.generated.files,"IOP-data-shaping-work-space-11.7.22-withMRI.RData",sep="/"))
+load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
 
 
 to.mask<- to_mask
@@ -71,10 +71,10 @@ K<-K
 
 options(warn = 0)
 #Load tidied/shaped data; further shaping for JAGS
-source(paste(location.of.r.scripts,"data-prep-for-jags.R",sep="/"))
+source(paste(location.of.r.scripts,"cv-data-prep-for-jags.R",sep="/"))
 
 #Load arguments for JAGS
-source(paste(location.of.r.scripts,"argument-prep-for-jags.R",sep="/"))
+source(paste(location.of.r.scripts,"cv-argument-prep-for-jags.R",sep="/"))
 
 #run model and save results
 if(K==1){
@@ -84,7 +84,7 @@ if(K==1){
 }
 
 #Define JAGS model
-source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
+source(paste(location.of.r.scripts,"cv-JAGS-prediction-model.R",sep="/"))
 
 set.seed(seed)
 outj<-jags(jags_data, inits=inits, 

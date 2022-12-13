@@ -17,7 +17,7 @@ for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
       -e $log_file_name `# Direct errors` \
       -m e -M zwang238@jh.edu `# Send an email when the job completes or aborts` \
       -v K=${1:-1},to_mask=${to_mask},mri_role=${mri_role},workdir=${workdir},job_name=${job_name} `# Assign variables to be passed to the bash script` \
-      run_single_simulation.sh
+      submit_single_cv.sh
 done
 #sh submit_simulation.sh: submit for non-cv (K = 1)
 #sh submit_simulation.sh K: submit for K fold cv 

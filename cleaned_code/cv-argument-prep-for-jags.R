@@ -53,14 +53,13 @@ if(mri_role == 0){
 
 ### 2. Initialize model parameters ---------------
 inits <- function(){
-  eta.hat <- pt.data$bx.pgg[is.na(eta.data)]
+  cancer_state <- pt.data$bx.pgg[is.na(cancer_data)]
   #latent cancer model
   cancer_int1 <- cancer_int2 <-cancer_int3 <-rnorm(1,0,1)
   cancer_slope1 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_slope2 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_slope3 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_coef_mean = rnorm(npred_cancer,mean=0,sd=0.25)
-  cancer_state <- pt.data$bx.pgg[is.na(cancer_data)]
   
   #psa model
   scale_ranef_mean_psa <- rlnorm(npred_ranef_psa)
@@ -91,12 +90,10 @@ inits <- function(){
     pirads_coef_mean = rnorm(npred_pirads + (nlevel_cancer-1),mean=0,sd=0.25) 
   }
   
-  
-  inits_list <- list(eta.hat=eta.hat,
+  inits_list <- list(cancer_state=cancer_state,
                      cancer_int1=cancer_int1, cancer_int2=cancer_int2, cancer_int3=cancer_int3, 
                      cancer_slope1=cancer_slope1,cancer_slope2=cancer_slope2,cancer_slope3=cancer_slope3,
                      cancer_coef_mean = cancer_coef_mean,
-                     cancer_state=cancer_state,
                      
                      scale_ranef_mean_psa=scale_ranef_mean_psa, mu_raw=mu_raw, Tau_B_raw=Tau_B_raw, 
                      resid_var_psa=resid_var_psa, fixef_coefficient=fixef_coefficient,
