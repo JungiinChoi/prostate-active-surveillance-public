@@ -1,3 +1,10 @@
+if(K>1){
+  jags_file_name <- paste0("cv-JAGS-prediction-model-",mri_role,seed,".txt")
+}else{
+  jags_file_name <- paste0("JAGS-prediction-model-",mri_role,seed,".txt")
+}
+
+
 cat(
   "model {
 
@@ -122,7 +129,13 @@ for(i in (npat_cancer_known+1):npat) {
   eta_eq4[i] <- ifelse(eta[i] == 4, 1, 0)
 }  #for those without SURG
 
-eta.track[1:n_mask] <- cancer_state[1:n_mask]
+",
+
+if(K>1){
+  "eta.track[1:n_mask] <- cancer_state[1:n_mask]"
+},
+
+"
 
 ##linear mixed effects model for PSA
 #generate random intercept and slope for individual given latent class
@@ -219,7 +232,7 @@ for(i in 1:npat_pirads) {
 },
 
 "}",
-file = paste(location.of.r.scripts,
-             paste0("cv-JAGS-prediction-model-",mri_role,".txt"), sep="/"))
+  file = paste(location.of.r.scripts, 
+                jags_file_name, sep="/"))
 
 
