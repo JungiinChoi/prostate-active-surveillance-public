@@ -26,7 +26,7 @@ workdir <- args[4]
 base.location <- workdir
 location.of.data <- paste0(base.location, "/data")
 location.of.r.scripts <- paste0(base.location, "/cleaned_code")
-location.of.generated.files <- paste0(base.location, "/generated-files-cv")
+location.of.generated.files <- paste0(base.location, "/generated-files")
 
 # base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/"
 # location.of.data <- paste0(base.location, "data")
@@ -92,7 +92,16 @@ outj<-jags(jags_data, inits=inits,
                             jags_file_name, sep="/"),
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
-for(j in 1:length(out$sims.list)){
-  write.csv(out$sims.list[[j]],
-            paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,seed,".csv",sep=""))
+
+
+if (K!=1){
+  for(j in 1:length(out$sims.list)){
+    write.csv(out$sims.list[[j]],
+              paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,seed,"/",K,".csv",sep=""))
+  }
+}else{
+  for(j in 1:length(out$sims.list)){
+    write.csv(out$sims.list[[j]],
+              paste(location.of.generated.files, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,"-single.csv",sep=""))
+  }
 }
