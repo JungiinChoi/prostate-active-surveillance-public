@@ -62,12 +62,11 @@ data.check <- function(condition, message){
   stopifnot(condition)}
 
 #Load data; tidy, check, and shape
-#source("model/data-load-check-and-shaping.R") #need to rerun this with new data
+#source("cleaned_code/data-load-check-and-shaping.R") #need to rerun this with new data
 load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
 
 
 to.mask<- to_mask
-K<-K
 
 options(warn = 0)
 #Load tidied/shaped data; further shaping for JAGS
