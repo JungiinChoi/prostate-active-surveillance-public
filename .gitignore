@@ -4,6 +4,7 @@
 **/.DS_Store
 .Ruserdata
 *.pdf
+generated-files/
 data/
 code_misc/
 *.csv
