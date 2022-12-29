@@ -63,8 +63,8 @@ data.check <- function(condition, message){
 
 #Load data; tidy, check, and shape
 #source("cleaned_code/data-load-check-and-shaping.R") #need to rerun this with new data
-load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
-
+#load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
+load(paste(location.of.generated.files,"IOP-data-shaping-work-space-11.7.22-withMRI.RData",sep="/"))
 
 to.mask<- to_mask
 
