@@ -1,7 +1,7 @@
 node_name='shared.q@compute-*'
 mem_gb_free=10
 n_core=1
-workdir="/users/jchoi/prostate-active-surveillance-vDaan"
+workdir="/users/jchoi/PAS"
 mri_role="both"
 
 for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
