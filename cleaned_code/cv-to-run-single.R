@@ -93,16 +93,16 @@ outj<-jags(jags_data, inits=inits,
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
 
-location.of.generated.folder = paste(location.of.generated.files, "/K=",K)
+location.of.generated.folder = paste(location.of.generated.files, "/K=",K,sep="")
 
 if (K > 1){
   for(j in 1:length(out$sims.list)){
     write.csv(out$sims.list[[j]],
-              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,"-",seed,".csv",sep=""))
+              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role, seed,".csv",sep=""))
   }
 }else{
   for(j in 1:length(out$sims.list)){
     write.csv(out$sims.list[[j]],
-              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,sep=""))
+              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,".csv",sep=""))
   }
 }
