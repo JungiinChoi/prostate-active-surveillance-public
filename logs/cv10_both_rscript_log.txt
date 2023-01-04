@@ -70,10 +70,3 @@ Variable pirads_int3 not found
 2: In FUN(X[[i]], ...) : Failed to set trace monitor for pirads_slope3
 Variable pirads_slope3 not found
 
-Error in file(file, ifelse(append, "a", "w")) : 
-  cannot open the connection
-Calls: write.csv -> eval.parent -> eval -> eval -> <Anonymous> -> file
-In addition: Warning message:
-In file(file, ifelse(append, "a", "w")) :
-  cannot open file '/users/jchoi/PAS/generated-files /K= 10/jags-prediction-cancer_int1-both-10.csv': No such file or directory
-Execution halted
