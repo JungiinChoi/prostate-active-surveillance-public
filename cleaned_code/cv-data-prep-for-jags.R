@@ -67,8 +67,8 @@ if (K>1){
 save <- as.data.frame(cbind(pt.data$subj[pt.data$cvgroup==to.mask], 
                             pt.data$true.pgg[pt.data$cvgroup==to.mask]))
 names(save) <- c("subj", "true.pgg")
-# write.csv(save,
-#           paste0(location.of.generated.files,"/eta-subj-",to.mask,".csv"))
+write.csv(save,
+          paste0(location.of.generated.folder,"/eta-subj-",to.mask,".csv"))
 
 ##remove true state for indicated group
 pt.data$true.pgg.bin[pt.data$cvgroup==to.mask]<- NA

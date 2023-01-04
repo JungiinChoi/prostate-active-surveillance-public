@@ -27,6 +27,8 @@ base.location <- workdir
 location.of.data <- paste0(base.location, "/data")
 location.of.r.scripts <- paste0(base.location, "/cleaned_code")
 location.of.generated.files <- paste0(base.location, "/generated-files")
+location.of.generated.folder = paste(location.of.generated.files, "/K=",K,sep="")
+ifelse(!dir.exists(location.of.generated.folder), dir.create(location.of.generated.folder), FALSE)
 
 # base.location <- "/Users/zitongwang/Downloads/prostate-active-surveillance-vDaan/"
 # location.of.data <- paste0(base.location, "data")
@@ -65,7 +67,6 @@ data.check <- function(condition, message){
 #source("cleaned_code/data-load-check-and-shaping.R") #need to rerun this with new data
 load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
 
-
 to.mask<- to_mask
 
 options(warn = 0)
@@ -93,16 +94,18 @@ outj<-jags(jags_data, inits=inits,
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
 
-location.of.generated.folder = paste(location.of.generated.files, "/K=",K,sep="")
-
 if (K > 1){
   for(j in 1:length(out$sims.list)){
-    write.csv(out$sims.list[[j]],
-              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role, seed,".csv",sep=""))
+    if (names(out$sims.list)[j] == "eta.track") {
+      write.csv(out$sims.list[[j]],
+                paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role, seed,".csv",sep=""))
+    }
   }
 }else{
   for(j in 1:length(out$sims.list)){
-    write.csv(out$sims.list[[j]],
-              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,".csv",sep=""))
+    if (names(out$sims.list)[j] == "eta.track") {
+      write.csv(out$sims.list[[j]],
+                paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-",mri_role,".csv",sep=""))
+    }
   }
 }
