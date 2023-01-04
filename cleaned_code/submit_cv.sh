@@ -5,7 +5,7 @@ workdir="/users/jchoi/PAS"
 mri_role="both"
 
 for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
-    job_name="cv${to_mask}_${mri_role}"
+    job_name="cv${to_mask}_${1:-1}_${mri_role}"
     #mkdir -p "${workdir}/generated-files-sh" # Make a directory if non-existent
     log_file_name="${workdir}/logs/${job_name}_qsub_log.txt"
     qsub \
