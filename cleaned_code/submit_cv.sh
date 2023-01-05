@@ -3,9 +3,10 @@ mem_gb_free=10
 n_core=1
 workdir="/users/jchoi/PAS"
 mri_role="both"
+n_cv_fold=${1:-1} 
 
-for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
-    job_name="cv${to_mask}_${1:-1}_${mri_role}"
+for ((to_mask=1;to_mask<=$n_cv_fold;to_mask++)) do
+    job_name="cv${to_mask}_${n_cv_fold}_${mri_role}"
     #mkdir -p "${workdir}/generated-files-sh" # Make a directory if non-existent
     log_file_name="${workdir}/logs/${job_name}_qsub_log.txt"
     qsub \
@@ -16,7 +17,7 @@ for ((to_mask=1;to_mask<=${1:-1};to_mask++)) do
       -o $log_file_name `# Direct output messages` \
       -e $log_file_name `# Direct errors` \
       -m e -M jchoi177@jh.edu `# Send an email when the job completes or aborts` \
-      -v K=${1:-1},to_mask=${to_mask},mri_role=${mri_role},workdir=${workdir},job_name=${job_name} `# Assign variables to be passed to the bash script` \
+      -v K=${n_cv_fold},to_mask=${to_mask},mri_role=${mri_role},workdir=${workdir},job_name=${job_name} `# Assign variables to be passed to the bash script` \
       submit_single_cv.sh
 done
 #sh submit_simulation.sh: submit for non-cv (K = 1)
