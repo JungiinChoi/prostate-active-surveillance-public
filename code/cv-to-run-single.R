@@ -25,7 +25,7 @@ workdir <- args[4]
 #workdir <- "/users/zwang3/PAS_11722"
 base.location <- workdir
 location.of.data <- paste0(base.location, "/data")
-location.of.r.scripts <- paste0(base.location, "/cleaned_code")
+location.of.r.scripts <- paste0(base.location, "/code")
 location.of.generated.files <- paste0(base.location, "/generated-files")
 location.of.generated.folder = paste(location.of.generated.files, "/K=",K,sep="")
 ifelse(!dir.exists(location.of.generated.folder), dir.create(location.of.generated.folder), FALSE)
@@ -36,11 +36,21 @@ ifelse(!dir.exists(location.of.generated.folder), dir.create(location.of.generat
 # location.of.generated.files <- paste0(base.location, "generated-files-sh")
 
 
-name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
-name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
-name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
-name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
-name.of.mri.data <- "MRI_6.15.csv" 
+# name.of.pt.data <- "Demographic_6.15.csv" #"demographics with physician info.2015.csv"
+# name.of.bx.data <- "Biopsy_6.15.csv" #"Biopsy data_2015.csv"
+# name.of.psa.data <- "PSA_6.15.csv" #"PSA.2015.csv"
+# name.of.tx.data <- "Treatment_6.15.csv" #"treatment_2015.csv"
+# name.of.mri.data <- "MRI_6.15.csv" 
+
+name.of.pt.data <- "Demographics_10.29.22.csv" 
+name.of.bx.data <- "Biopsy_processed.csv" 
+name.of.psa.data <- "PSA_10.29.22.csv" 
+name.of.tx.data <- "Treatments_10.29.22.csv" 
+name.of.mri.data <- "MRI_10.29.22.csv" 
+name.of.mri.findings.data <- "MRI_findings_10.29.22.csv"
+name.of.targeted.pathology.data <- "Targeted_pathology_10.29.22.csv"
+
+
 
 ### 3. Load libraries
 #### may need to go back and add command for automatic installation - YESS done Zitong
@@ -65,8 +75,7 @@ data.check <- function(condition, message){
 
 #Load data; tidy, check, and shape
 #source("cleaned_code/data-load-check-and-shaping.R") #need to rerun this with new data
-load(paste(location.of.generated.files,"IOP-data-shaping-work-space-6.15-withMRI.RData",sep="/"))
-
+load(paste(location.of.generated.files,"IOP-data-shaping-work-space-11.7.22-withMRI.RData",sep="/"))
 to.mask<- to_mask
 
 options(warn = 0)
