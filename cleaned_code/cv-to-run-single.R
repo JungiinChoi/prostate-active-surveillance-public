@@ -45,8 +45,8 @@ name.of.mri.data <- "MRI_6.15.csv"
 ### 3. Load libraries
 #### may need to go back and add command for automatic installation - YESS done Zitong
 # Package names
-packages <- c("lme4",  "dplyr", "tidyr", "tidyverse", "readr",
-              "splines", "gtools", "bayesm", "rjags", "R2jags", "RCurl")
+packages <- c("lme4",  "dplyr", "tidyr", "readr",
+              "splines", "bayesm", "rjags", "R2jags")
 
 # Install packages not yet installed
 installed_packages <- packages %in% rownames(installed.packages())
