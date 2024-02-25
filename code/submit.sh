@@ -16,7 +16,7 @@ for ((to_mask=1;to_mask<=$n_cv_fold;to_mask++)) do
       -N $job_name `# Give a human-readable name to the submitted job so that you can find it later` \
       -o $log_file_name `# Direct output messages` \
       -e $log_file_name `# Direct errors` \
-      -m e -M jchoi177@jh.edu `# Send an email when the job completes or aborts` \
+      # -m e -M jchoi177@jh.edu `# Send an email when the job completes or aborts` \
       -v K=${n_cv_fold},to_mask=${to_mask},mri_role=${mri_role},workdir=${workdir},job_name=${job_name} `# Assign variables to be passed to the bash script` \
       submit_single_cv.sh
 done
