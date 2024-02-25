@@ -1,13 +1,12 @@
-Jungin Choi
-jchoi177@jhu.edu
 
-1. Synthetic Data Summary
+
+## Synthetic Data Summary
 
 <img width="991" alt="image" src="https://github.com/JungiinChoi/prostate-active-surveillance-hier/assets/86948245/1ed67658-90c4-46df-beb9-1e293b69ef10">
 
-2. Data Format and Description
+## Data Format and Description
 
-1) DX (Diagnostic)
+   - DX (Diagnostic)
 
 | DX              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
@@ -20,7 +19,7 @@ jchoi177@jhu.edu
 | dxyear    |  Year of diagnosis   |  |
 | dxrpdays |  Days from diag date to RP   |  |
 
-2) BX (Biopsy)
+   - BX (Biopsy)
 | BX              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
 | ID        |   Patient ID   | |
@@ -32,7 +31,7 @@ jchoi177@jhu.edu
 | dxBXdays    |  Days from diag date to BX   |  |
 
 
-3) PSA
+   - PSA
 | PSA              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
 | ID        |   Patient ID   | |
@@ -40,7 +39,7 @@ jchoi177@jhu.edu
 | dxPSAdays    |  Days from diag date to PSA   |  |
 
 
-4) MRI
+   - MRI
 
 | MRI              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
@@ -51,11 +50,11 @@ jchoi177@jhu.edu
 
 
 
-4. Notes on Data Format
+## Notes on Data Format
 - List the patients with gleason grade known from RP should be listed at the top of the diagnostic (dx) dataset.
 - Only data collected before radical prostatectomy(RP) are used in all datasets (dx, bx, MRI, and PSA). 
 
-4. How to Run the Model?
+## How to Run the Model?
 1) Customize the variable `$work_dir` in the `submit.sh` script to match your working directory.
 2) Running the model involves the following steps:
    - Execute `submit.sh` to run our model without MRI information.
@@ -65,12 +64,12 @@ jchoi177@jhu.edu
 4) The fitted parameters and estimated cancer states will be automatically saved in the `generated-files` directory.
 5) After obtaining estimated cancer states, compute the Area Under the Curve (AUC) by running the `AUC.R` script.
 
-5. Workflow
+## Workflow
 
 <img width="1322" alt="image" src="https://github.com/JungiinChoi/prostate-active-surveillance-hier/assets/86948245/ec3930fa-c49b-4961-880a-8b9be2b0774a">
 
   
-6. Libraries required
+## Libraries required
 Model estimation:
 lme4
 splines
