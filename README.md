@@ -20,11 +20,13 @@
 | dxrpdays |  Days from diag date to RP   |  |
 
    - BX (Biopsy)
+
+
 | BX              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
 | ID        |   Patient ID   | |
 | bxpos           |   Biopsy positive   |Set to 0 if gprim or gsecond is NA |
-| gprim    |  Gleason primary   |  |
+| gprim    |  Gleason primary   |   | 
 | gsecond |  Gleason secondary   |  |
 | corestaken        |   Biopsy cores number dissected   | Optional |
 | corespos           |Biopsy cores number pos| Optional |
@@ -32,6 +34,7 @@
 
 
    - PSA
+
 | PSA              | Description | Note |
 | :---------: | :----------------------: | :-----------------: |
 | ID        |   Patient ID   | |
