@@ -6,7 +6,4 @@
 *.pdf
 generated-files*/
 logs/
-data/
-code_misc/
-*.csv
 *.txt
