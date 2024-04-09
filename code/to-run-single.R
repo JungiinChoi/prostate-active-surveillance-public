@@ -57,8 +57,7 @@ source(paste(location.of.r.scripts,"data-prep-for-jags.R",sep="/"))
 source(paste(location.of.r.scripts,"argument-prep-for-jags.R",sep="/"))
 
 #run model and save results
-seed <- 2022
-
+seed <- 2024
 
 #Define JAGS model
 source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
@@ -78,4 +77,4 @@ for(j in 1:length(out$sims.list)){
     write.csv(out$sims.list[[j]],
               paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-", mri_role,".csv",sep=""))
   }
- }
+}

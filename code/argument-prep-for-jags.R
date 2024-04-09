@@ -76,18 +76,14 @@ inits <- function(){
   cancer_coef_mean = rnorm(npred_cancer[1],mean=0,sd=0.25)
   
   #psa model
-  scale_ranef_mean_psa_1 <- rlnorm(npred_ranef_psa[1])
   mu_raw_1 <- as.matrix(cbind(rnorm(npred_ranef_psa[1]),rnorm(npred_ranef_psa[1])))
   Tau_B_raw_1 <- rwishart((npred_ranef_psa[1]+1),diag(npred_ranef_psa[1])*var_vec[[1]])$W
   resid_var_psa <- rep(min(rlnorm(1),1), J)
-  tau_res <- rep(0, J)
   fixef_coefficient <- matrix(rnorm(npred_fixef_psa[1] * J), ncol = J)
   
-  scale_ranef_mean_psa_2 <- rlnorm(npred_ranef_psa[2])
   mu_raw_2 <- as.matrix(cbind(rnorm(npred_ranef_psa[2]),rnorm(npred_ranef_psa[2])))
   Tau_B_raw_2 <- rwishart((npred_ranef_psa[2]+1),diag(npred_ranef_psa[2])*var_vec[[2]])$W
 
-  scale_ranef_mean_psa_3 <- rlnorm(npred_ranef_psa[3])
   mu_raw_3 <- as.matrix(cbind(rnorm(npred_ranef_psa[3]),rnorm(npred_ranef_psa[3])))
   Tau_B_raw_3 <- rwishart((npred_ranef_psa[3]+1),diag(npred_ranef_psa[3])*var_vec[[3]])$W
 
@@ -111,11 +107,10 @@ inits <- function(){
                      cancer_slope1=cancer_slope1,cancer_slope2=cancer_slope2,cancer_slope3=cancer_slope3,
                      cancer_coef_mean = cancer_coef_mean,
                      
-                     scale_ranef_mean_psa_1=scale_ranef_mean_psa_1, scale_ranef_mean_psa_2=scale_ranef_mean_psa_2, scale_ranef_mean_psa_3=scale_ranef_mean_psa_3, 
                      mu_raw_1=mu_raw_1, mu_raw_2=mu_raw_2, mu_raw_3=mu_raw_3, 
                      Tau_B_raw_1=Tau_B_raw_1, Tau_B_raw_2=Tau_B_raw_2, Tau_B_raw_3=Tau_B_raw_3, 
                      resid_var_psa=resid_var_psa, 
-                     fixef_coefficient=fixef_coefficient, tau_res = rep(0,J),
+                     fixef_coefficient=fixef_coefficient, 
                      
                      pgg_int1=pgg_int1, pgg_int2=pgg_int2, pgg_int3=pgg_int3, 
                      pgg_slope1=pgg_slope1,pgg_slope2=pgg_slope2,pgg_slope3=pgg_slope3,

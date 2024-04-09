@@ -105,7 +105,7 @@ if(mri_role %in% c("MRI", "MRI_ST")){
 
 ## continuation ratio model for true cancer state
 for(j in 1:npat[1]){ 
-  exponent1_1[j] <- cancer_int1[1] + inprod(cancer_slope1[1:npred_cancer[1],1], modmat_cancer_1[j,1:npred_cancer[1])
+  exponent1_1[j] <- cancer_int1[1] + inprod(cancer_slope1[1:npred_cancer[1],1], modmat_cancer_1[j,1:npred_cancer[1]])
   exponent2_1[j] <- cancer_int2[1] + inprod(cancer_slope2[1:npred_cancer[1],1], modmat_cancer_1[j,1:npred_cancer[1]])
   exponent3_1[j] <- cancer_int3[1] + inprod(cancer_slope3[1:npred_cancer[1],1], modmat_cancer_1[j,1:npred_cancer[1]])
   p_eta_1[j, 1] <- exp(exponent1_1[j])/(1+exp(exponent1_1[j]))
@@ -250,10 +250,10 @@ if(mri_role == "MRI_ST"){
     ## logitP(pgg = 3|pgg >=3) w/  [1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
 },
 "
-  p_pgg_1[j, 1] <- exp(pgg_exp1_1[j])/(1+exp(pgg_exp1_1[j]))
-  p_pgg_1[j, 2] <- 1/(1+exp(pgg_exp1_1[j])) * exp(pgg_exp2_1[j])/(1+exp(pgg_exp2_1[j]))
-  p_pgg_1[j, 3] <- 1/(1+exp(pgg_exp1_1[j])) * 1/(1+exp(pgg_exp2_1[j])) * exp(pgg_exp3_1[j])/(1+exp(pgg_exp3_1[j]))
-  p_pgg_1[j, 4] <- 1- p_pgg_1[j, 1] - p_pgg_1[j, 2] - p_pgg_1[j, 3]
+  logit(p_pgg_1[j, 1]) <- max(0.0001, pgg_exp1_1[j])
+  p_pgg_1[j, 2] <- max(0.0001, 1/(1+exp(pgg_exp1_1[j])) * exp(pgg_exp2_1[j])/(1+exp(pgg_exp2_1[j])))
+  p_pgg_1[j, 3] <- max(0.0001, 1/(1+exp(pgg_exp1_1[j])) * 1/(1+exp(pgg_exp2_1[j])) * exp(pgg_exp3_1[j])/(1+exp(pgg_exp3_1[j])))
+  p_pgg_1[j, 4] <- max(0.0001, 1- p_pgg_1[j, 1] - p_pgg_1[j, 2] - p_pgg_1[j, 3])
 }
 
 for(i in 1:npat_pgg[1]) {
@@ -298,10 +298,10 @@ if(mri_role == "MRI_ST"){
     ## logitP(pgg =3|pgg>=3) w/  [1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
 },
 "
-  p_pgg_2[j, 1] <- exp(pgg_exp1_2[j])/(1+exp(pgg_exp1_2[j]))
-  p_pgg_2[j, 2] <- 1/(1+exp(pgg_exp1_2[j])) * exp(pgg_exp2_2[j])/(1+exp(pgg_exp2_2[j]))
-  p_pgg_2[j, 3] <- 1/(1+exp(pgg_exp1_2[j])) * 1/(1+exp(pgg_exp2_2[j])) * exp(pgg_exp3_2[j])/(1+exp(pgg_exp3_2[j]))
-  p_pgg_2[j, 4] <- 1- p_pgg_2[j, 1] - p_pgg_2[j, 2] - p_pgg_2[j, 3]
+  logit(p_pgg_2[j, 1]) <- max(0.0001, pgg_exp1_2[j])
+  p_pgg_2[j, 2] <- max(0.0001, 1/(1+exp(pgg_exp1_2[j])) * exp(pgg_exp2_2[j])/(1+exp(pgg_exp2_2[j])))
+  p_pgg_2[j, 3] <- max(0.0001, 1/(1+exp(pgg_exp1_2[j])) * 1/(1+exp(pgg_exp2_2[j])) * exp(pgg_exp3_2[j])/(1+exp(pgg_exp3_2[j])))
+  p_pgg_2[j, 4] <- max(0.0001, 1- p_pgg_2[j, 1] - p_pgg_2[j, 2] - p_pgg_2[j, 3])
 }
 
 for(i in 1:npat_pgg[2]) {
@@ -321,7 +321,7 @@ if(mri_role == "MRI_ST"){
     ## logitP(pgg = 1) w/  [1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
 },
 "
-  pgg_exp2_1[j] <- pgg_int2[3] + inprod(pgg_slope2[1:npred_pgg[3],3], modmat_pgg_3[j,1:npred_pgg[3]])+
+  pgg_exp2_3[j] <- pgg_int2[3] + inprod(pgg_slope2[1:npred_pgg[3],3], modmat_pgg_3[j,1:npred_pgg[3]])+
 	               pgg_slope2[(npred_pgg[3] + 1),3] * step(eta_3[pgg_patient_index_map_3[j]] - 2) + 
 	               pgg_slope2[(npred_pgg[3] + 2),3] * step(eta_3[pgg_patient_index_map_3[j]] - 3) + 
 	               pgg_slope2[(npred_pgg[3] + 3),3] * step(eta_3[pgg_patient_index_map_3[j]] - 4)",
@@ -345,14 +345,14 @@ if(mri_role == "MRI_ST"){
     ## logitP(pgg =3|pgg>=3) w/ [1(eta >= 3)-1(eta<=2)]*1(pirads >= 3)"
 },
 "
-  p_pgg_3[j, 1] <- exp(pgg_exp1_3[j])/(1+exp(pgg_exp1_3[j]))
-  p_pgg_3[j, 2] <- 1/(1+exp(pgg_exp1_3[j])) * exp(pgg_exp2_3[j])/(1+exp(pgg_exp2_3[j]))
-  p_pgg_3[j, 3] <- 1/(1+exp(pgg_exp1_3[j])) * 1/(1+exp(pgg_exp2_3[j])) * exp(pgg_exp3_3[j])/(1+exp(pgg_exp3_3[j]))
-  p_pgg_3[j, 4] <- 1- p_pgg_3[j, 1] - p_pgg_3[j, 2] - p_pgg_3[j, 3]
+  logit(p_pgg_3[j, 1]) <- max(0.0001, pgg_exp1_3[j])
+  p_pgg_3[j, 2] <- max(0.0001, 1/(1+exp(pgg_exp1_3[j])) * exp(pgg_exp2_3[j])/(1+exp(pgg_exp2_3[j])))
+  p_pgg_3[j, 3] <- max(0.0001, 1/(1+exp(pgg_exp1_3[j])) * 1/(1+exp(pgg_exp2_3[j])) * exp(pgg_exp3_3[j])/(1+exp(pgg_exp3_3[j])))
+  p_pgg_3[j, 4] <- max(0.0001, 1- p_pgg_3[j, 1] - p_pgg_3[j, 2] - p_pgg_3[j, 3])
 }
 
 for(i in 1:npat_pgg[3]) {
-  pgg_data_3[i] ~ dcat(p_pgg_3[i,1:nlevel_cancer[3]])
+  pgg_data_3[i] ~ dcat(p_pgg_3[i,1:(nlevel_cancer[3])])
 }
 
 ",

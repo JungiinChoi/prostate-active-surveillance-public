@@ -46,7 +46,7 @@ npat <- sapply(dx_list, nrow)
 #list of known true states
 cancer_data_true <- sapply(dx_list, function(x){x$rp[!is.na(x$rp)]})
 
-
+cancer_data <- list(length = J)
 dx_list[[3]]$rp == "NA"
 for (i in 1:J){
   cancer_data[[i]] <- (dx_list[[i]]$rp)[order(is.na(dx_list[[i]]$rp))]
@@ -205,8 +205,6 @@ for (i in 1:J){
   modmat_pgg[[i]] <- as.matrix(cbind(posratio_tmp, ns(bxmri_list[[i]]$dxBXdays, 3)))
   npred_pgg <- sapply(modmat_pgg, ncol)
 }
-
-data.check(condition=as.logical(sum(is.na(V.PGG.data))==0), message="Missing biopsy data. Email Yates; she will check orginal script.")
 
 
 ### 6. Prior means for intercept in continuation ratio model ----------
