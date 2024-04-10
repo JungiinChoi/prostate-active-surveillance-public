@@ -1,21 +1,29 @@
 # Computation of AUC using data in generated-files folder
 
 
-### Clear workspace
-rm(list=ls())
-
+### Define directories, file names
+base.location <- workdir
+location.of.data <- paste0(base.location, "/data")
+location.of.r.scripts <- paste0(base.location, "/code")
+location.of.generated.files <- paste0(base.location, "/generated-files")
+location.of.generated.folder = paste(location.of.generated.files, "/", mri_role, sep="")
 
 ### Load libraries, helper functions
 library("pROC")
 library("ROCR")
 library("splines")
 
-p_eta_hat <- readRDS(paste0(location.of.generated.folder, "/p_eta_hat.rds"))
+J <- 3
+
+p_eta_hat <- list(length = J)
+for(j in 1:J){
+  p_eta_hat[[j]] <- t(matrix(apply(read.csv(paste(location.of.generated.folder, "/jags-prediction-p_eta_", 
+                 j,"-", mri_role,".csv",sep=""))[,-1], 2, mean), ncol = 4))
+}
 
 # AUC dataframe for PGG > 1, PGG > 2, PGG > 3
 # Plot ROC Curve
 
-J <- 3
 dx_list <- list(length = J)
 for (i in 1:J){
   dx_list[[i]] <- read.csv(paste0(location.of.data,"/dx_",i,".csv"))}
@@ -35,3 +43,5 @@ for (i in 1:J){
   }
 }
 
+## AUC results
+AUC_list
