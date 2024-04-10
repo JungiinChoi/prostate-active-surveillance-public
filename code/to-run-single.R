@@ -78,3 +78,10 @@ for(j in 1:length(out$sims.list)){
               paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-", mri_role,".csv",sep=""))
   }
 }
+
+p_eta_hat <- list(length = J)
+for(j in 1:J){
+  p_eta_hat[[j]] <- apply(apply(out$sims.list[[j+10]], c(2,3), mean), 1, 
+                          function(x){x/sum(x)})
+}
+saveRDS(p_eta_hat, paste0(location.of.generated.folder, "/p_eta_hat.rds"))
