@@ -58,7 +58,7 @@ for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
   pgg_coef_mean[index] ~ dnorm(0,1)
 }
 ",
-if(mri_role %in% c("moderator", "both")){"pgg_coef_mean[npred_pgg + nlevel_cancer] ~ dnorm(0,1)"},
+if(mri_role %in% c("MRI", "MRI_ST")){"pgg_coef_mean[npred_pgg + nlevel_cancer] ~ dnorm(0,1)"},
 
 "\n
 pgg_int1 ~ dnorm(pgg_int1_mean, 1) 
@@ -75,7 +75,7 @@ for (index in (npred_pgg + 1):(npred_pgg + (nlevel_cancer - 1))) {
   pgg_slope3[index] ~ dnorm(pgg_coef_mean[index], 1)
 }",
 
-if(mri_role %in% c("moderator", "both")){
+if(mri_role %in% c("MRI", "MRI_ST")){
   "
   pgg_slope1[npred_pgg + nlevel_cancer] ~ dnorm(pgg_coef_mean[npred_pgg + nlevel_cancer],1)
   pgg_slope2[npred_pgg + nlevel_cancer] ~ dnorm(pgg_coef_mean[npred_pgg + nlevel_cancer],1)
@@ -85,7 +85,9 @@ if(mri_role %in% c("moderator", "both")){
 "
 
 ###LIKELIHOOD
+
 ##latent variable for true cancer state (sequential logistic regression)
+
 for(j in 1:npat){ 
   exponent1[j] <- cancer_int1 + inprod(cancer_slope1[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
   exponent2[j] <- cancer_int2 + inprod(cancer_slope2[1:npred_cancer], modmat_cancer[j,1:npred_cancer])
@@ -146,8 +148,11 @@ for(j in 1:npat_pgg){
 	               pgg_slope1[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
 	               pgg_slope1[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope1[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
-if(mri_role %in% c("moderator", "both")){
+if(mri_role == "MRI_ST"){
   "+ pgg_slope1[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 2)-(1-step(eta[pgg_patient_index_map[j]] - 2))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
+    ## logitP(pgg = 1) w/  (pirads - 2)*[1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
+} else if (mri_role == "MRI"){
+  "+ pgg_slope1[(npred_pgg + 4)] * (step(eta[pgg_patient_index_map[j]] - 2)-(1-step(eta[pgg_patient_index_map[j]] - 2))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
     ## logitP(pgg = 1) w/  (pirads - 2)*[1(eta >= 2)-1(eta=1)]*1(pirads >= 3)"
 },
 "
@@ -155,8 +160,11 @@ if(mri_role %in% c("moderator", "both")){
 	               pgg_slope2[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
 	               pgg_slope2[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope2[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
-if(mri_role %in% c("moderator", "both")){
+if(mri_role == "MRI_ST"){
   "+ pgg_slope2[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 3)-(1-step(eta[pgg_patient_index_map[j]] - 3))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
+	     ## logitP(pgg = 2|pgg >=2) w/ (pirads - 2)*[1(eta >= 3)-1(eta<=2)]*1(pirads >= 3)"
+} else if (mri_role == "MRI"){
+  "+ pgg_slope2[(npred_pgg + 4)] * (step(eta[pgg_patient_index_map[j]] - 3)-(1-step(eta[pgg_patient_index_map[j]] - 3))) * step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
 	     ## logitP(pgg = 2|pgg >=2) w/ (pirads - 2)*[1(eta >= 3)-1(eta<=2)]*1(pirads >= 3)"
 },
 "
@@ -164,8 +172,12 @@ if(mri_role %in% c("moderator", "both")){
 	               pgg_slope3[(npred_pgg + 1)] * step(eta[pgg_patient_index_map[j]] - 2) + 
 	               pgg_slope3[(npred_pgg + 2)] * step(eta[pgg_patient_index_map[j]] - 3) + 
 	               pgg_slope3[(npred_pgg + 3)] * step(eta[pgg_patient_index_map[j]] - 4)",
-if(mri_role %in% c("moderator", "both")){
+if(mri_role == "MRI_ST"){
   "+ pgg_slope3[(npred_pgg + 4)] * (pgg_pirads_data_m2[pgg_patient_index_map[j]]) * (step(eta[pgg_patient_index_map[j]] - 4)-(1-step(eta[pgg_patient_index_map[j]] - 4))) * 
+    step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
+	   ## logitP(pgg =3|pgg>=3) w/ (pirads - 2)*[1(eta >= 4)-1(eta<=3)]*1(pirads >= 3)"
+} else if(mri_role == "MRI"){
+  "+ pgg_slope3[(npred_pgg + 4)] *(step(eta[pgg_patient_index_map[j]] - 4)-(1-step(eta[pgg_patient_index_map[j]] - 4))) * 
     step(pgg_pirads_data[pgg_patient_index_map[j]] - 3)  
 	   ## logitP(pgg =3|pgg>=3) w/ (pirads - 2)*[1(eta >= 4)-1(eta<=3)]*1(pirads >= 3)"
 },
@@ -180,43 +192,6 @@ if(mri_role %in% c("moderator", "both")){
 for(i in 1:npat_pgg) {
   pgg_data[i] ~ dcat(p_pgg[i,1:nlevel_cancer])
 }",
-
-if(mri_role %in% c("outcome", "both")){
-  "#Prior for mri pirads data
-for (index in 1:npred_pirads) {
-  pirads_coef_mean[index] ~ dnorm(0,1)
-}
-for (index in (npred_pirads + 1):(npred_pirads + (nlevel_cancer - 1))) {
-  pirads_coef_mean[index] ~ dnorm(0,1)
-}
-pirads_int1 ~ dnorm(pirads_int1_mean, 1) 
-pirads_int2 ~ dnorm(pirads_int2_mean, 1)
-
-for(index in (npred_pirads + 1):(npred_pirads + (nlevel_cancer - 1))) {
-  pirads_slope1[index] ~ dnorm(pirads_coef_mean[index], 1)
-  pirads_slope2[index] ~ dnorm(pirads_coef_mean[index], 1)
-}
-
-### SEQUENTIAL LOGISTIC MODEL FOR MRI PI-RADS SCORE
-for(j in 1:npat_pirads){ 
-  pirads_exp1[j] <- pirads_int1 +
-	               pirads_slope1[(npred_pirads + 1)] * step(eta[pirads_patient_index_map[j]] - 2) + 
-	               pirads_slope1[(npred_pirads + 2)] * step(eta[pirads_patient_index_map[j]] - 3) + 
-	               pirads_slope1[(npred_pirads + 3)] * step(eta[pirads_patient_index_map[j]] - 4)
-  pirads_exp2[j] <- pirads_int2 +
-	               pirads_slope2[(npred_pirads + 1)] * step(eta[pirads_patient_index_map[j]] - 2) + 
-	               pirads_slope2[(npred_pirads + 2)] * step(eta[pirads_patient_index_map[j]] - 3) + 
-	               pirads_slope2[(npred_pirads + 3)] * step(eta[pirads_patient_index_map[j]] - 4)
-  p_pirads[j, 1] <- exp(pirads_exp1[j])/(1+exp(pirads_exp1[j]))
-  p_pirads[j, 2] <- 1/(1+exp(pirads_exp1[j])) * exp(pirads_exp2[j])/(1+exp(pirads_exp2[j]))
-  p_pirads[j, 3] <- 1- p_pirads[j, 1] - p_pirads[j, 2] 
-}
-
-
-for(i in 1:npat_pirads) {
-  pirads_data[i] ~ dcat(p_pirads[i,1:(nlevel_cancer-1)])
-  }"
-},
 
 "}",
   file = paste(location.of.r.scripts, 

@@ -42,6 +42,7 @@ if (any(installed_packages == FALSE)) {
 
 # Packages loading
 invisible(lapply(packages, library, character.only = TRUE))
+
 ### 5. Run R scripts!
 
 #Load data; tidy, check, and shape
