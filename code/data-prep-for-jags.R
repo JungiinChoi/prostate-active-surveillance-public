@@ -27,7 +27,6 @@ library("readxl")
 # load data files from different institutions
 
 # number of institutions 
-J <- 3
 
 dx_list <- bx_list <- mri_list <- psa_list <- list(length = J)
 
@@ -43,17 +42,14 @@ for (i in 1:J){
 #number of patients
 npat <- sapply(dx_list, nrow)
 
-#list of known true states
-cancer_data_true <- sapply(dx_list, function(x){x$rp[!is.na(x$rp)]})
-
-cancer_data <- list(length = J)
-dx_list[[3]]$rp == "NA"
-for (i in 1:J){
-  cancer_data[[i]] <- (dx_list[[i]]$rp)[order(is.na(dx_list[[i]]$rp))]
-}
-
 #number with known true state
 npat_cancer_known <- sapply(dx_list, function(x){sum(!is.na(x$rp))})
+
+#list of known true states
+cancer_data_true <- matrix(0, nrow = J, ncol = max(npat_cancer_known))
+for (i in 1:J){
+  cancer_data_true[i,1:npat_cancer_known[i]] <- dx_list[[i]]$rp[!is.na(dx_list[[i]]$rp)]
+}
 
 #mean- and varianace- standardized age at diagnosis
 for (i in 1:J){
@@ -63,35 +59,26 @@ for (i in 1:J){
 
 # Covariate matrix for predictors of True gleasand grade
 # Covariates can be any relevant predictors: here, age and vol
-modmat_cancer <- list(length = J)
+modmat_cancer <- array(0, dim = c(J, max(npat), 2))
 
 for (i in 1:J){
-  modmat_cancer[[i]] <- as.matrix(cbind(dx_list[[i]]$age_diag_std, 
+  modmat_cancer[i,1:npat[i],1:2] <- as.matrix(cbind(dx_list[[i]]$age_diag_std, 
                                         dx_list[[i]]$vol_std))
 }
   
-npred_cancer <- sapply(modmat_cancer, ncol)
+npred_cancer <- rep(2,J)
 
 
 ### 2. Format PSA data for JAGS run ------------------
 #number of observations
 nobs_psa <- sapply(psa_list, nrow)
 
-#observed PSA
-log_psa_data <- lapply(psa_list, function(x){x$psa})
-data.check(condition=as.logical(sum(is.na(log_psa_data))==0), message="Missing PSA values. Email Yates; she will check orginal script.")
-
-#list of patients
-psa_patient_index_map <- lapply(psa_list, function(x){x$ID})
+# observed PSA
+log_psa_data <- psa_patient_index_map <- matrix(0, nrow = J, ncol = max(nobs_psa))
+modmat_ranef_psa <- modmat_fixef_psa <- array(0, dim = c(J, max(nobs_psa), 2))
 
 # covariate matrix for random effects in PSA mixed effects model
-modmat_ranef_psa <- list(length = J)
-for (i in 1:J){
-  modmat_ranef_psa[[i]] <- as.matrix(cbind(rep(1,nobs_psa[i]), 
-                                           psa_list[[i]]$dxPSAdays))
-}
-npred_ranef_psa <- sapply(modmat_ranef_psa, ncol)
-data.check(condition=as.logical(sum(is.na(modmat_ranef_psa))==0), message="Missing time since dx in PSA data. Email Yates; she will check orginal script.")
+npred_ranef_psa <- npred_fixef_psa <- rep(2,J)
 
 # covariate matrix for fixed effects in PSA mixed effects model
 
@@ -107,8 +94,16 @@ for (i in 1:J){
   psa_list[[i]]$prosvol_std[is.na(psa_list[[i]]$prosvol_std)] <- 0
 }
 
-modmat_fixef_psa <- lapply(psa_list, function(x){as.matrix(cbind(x$prosvol_std, x$age_diag_std))})
-npred_fixef_psa <- sapply(modmat_fixef_psa, ncol)
+for (i in 1:J){
+  log_psa_data[i, 1:nobs_psa[i]] <- psa_list[[i]]$psa
+  psa_patient_index_map[i, 1:nobs_psa[i]] <- psa_list[[i]]$ID
+  modmat_ranef_psa[i,1:nobs_psa[i],1:2] <- as.matrix(cbind(rep(1,nobs_psa[i]), 
+                                                           psa_list[[i]]$dxPSAdays))
+  modmat_fixef_psa[i,1:nobs_psa[i],1:2] <- as.matrix(cbind(psa_list[[i]]$prosvol_std, psa_list[[i]]$age_diag_std))
+}
+data.check(condition=as.logical(sum(is.na(log_psa_data))==0), message="Missing PSA values. Email Yates; she will check orginal script.")
+data.check(condition=as.logical(sum(is.na(modmat_ranef_psa))==0), message="Missing time since dx in PSA data. Email Yates; she will check orginal script.")
+
 data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missing volumes in PSA data. Email Yates; she will check orginal script.")
 
 
@@ -167,13 +162,12 @@ for (i in 1:J){
 }
 
 # Define Cancer state argument
-cancer_state = list(length = J)
+cancer_state <- matrix(0, nrow = J, ncol = max(npat - npat_cancer_known))
 for (i in 1:J){
-  cancer_state[[i]] <- bxmri_list[[2]] %>% group_by(ID) %>%
+  cancer_state[i,1:((npat - npat_cancer_known)[i])] <- c(bxmri_list[[i]] %>% group_by(ID) %>%
     summarise(pgg_mean = round(mean(pgg))) %>%
     right_join(dx_list[[i]], by = "ID") %>%
-    filter(is.na(rp)) %>%
-    select(pgg_mean)
+    filter(is.na(rp)) %>% select(pgg_mean))$pgg_mean
 }
 
 #number of biopsies with GS outcome
@@ -185,25 +179,26 @@ data.check(condition=as.logical(sum(is.na(PGG)) == 0), message="Missing biopsy r
 subj_pgg <- lapply(bxmri_list, function(x){x$ID})
 
 npat_pgg <- n_pgg
-pgg_data <- PGG
-pgg_patient_index_map <- subj_pgg
+pgg_data <- pgg_patient_index_map <- pgg_pirads_data <- pgg_pirads_data_m2 <- matrix(0, nrow = J, ncol = max(n_pgg))
+for (i in 1:J){
+  pgg_data[i,1:n_pgg[i]] <- PGG[[i]]
+  pgg_patient_index_map[i,1:n_pgg[i]] <- subj_pgg[[i]]
+}
 
 # Covariates (beta) for Biopsy model: here, ratio of positive, natural spline of days until biopsy. 
+modmat_pgg <- array(0, dim = c(J, max(n_pgg), 4))
 
-pgg_pirads_data <- list(length = J)
-pgg_pirads_data_m2 <- list(length = J)
-modmat_pgg <- list(length = J)
 for (i in 1:J){
   posratio_tmp <- bxmri_list[[i]]$corespos / bxmri_list[[i]]$corestaken
   posratio_tmp[is.na(posratio_tmp)] <- 0
   bxmri_list[[i]]$mripirads[is.na(bxmri_list[[i]]$mripirads)] <- 0
-  pgg_pirads_data[[i]] <- bxmri_list[[i]]$mripirads
   
-  pgg_pirads_data_m2[[i]] <- pgg_pirads_data[[i]] - 2
+  pgg_pirads_data[i,1:n_pgg[i]] <- bxmri_list[[i]]$mripirads
+  pgg_pirads_data_m2[i,1:n_pgg[i]] <- bxmri_list[[i]]$mripirads - 2
   
   #natural splines for continuous variables
-  modmat_pgg[[i]] <- as.matrix(cbind(posratio_tmp, ns(bxmri_list[[i]]$dxBXdays, 3)))
-  npred_pgg <- sapply(modmat_pgg, ncol)
+  modmat_pgg[i,1:n_pgg[i], 1:4] <- as.matrix(cbind(posratio_tmp, ns(bxmri_list[[i]]$dxBXdays, 3)))
+  npred_pgg <- rep(4,J)
 }
 
 
@@ -217,7 +212,7 @@ cancer_int1_mean <- cancer_int2_mean <- cancer_int3_mean <- rep(0,J)
 for (i in 1:J){
   phat <- rep(0,4)
   for (k in 1:4){
-    phat[k] <- sum(cancer_data_true[[i]] == k) / length(cancer_data_true[[i]])
+    phat[k] <- sum(cancer_data_true[i,1:npat_cancer_known[i]] == k) / npat_cancer_known[i]
   }
   cancer_int1_mean[i] <- logit(phat[1])
   cancer_int2_mean[i] <- logit(phat[2] / (1 - phat[1]))

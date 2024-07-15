@@ -15,6 +15,7 @@ rm(list=ls())
 args <- commandArgs(trailingOnly = TRUE)
 mri_role <- args[1]
 workdir <- args[2]
+J <- args[3]
 
 ### 2. Define directories, file names
 
@@ -63,7 +64,7 @@ source(paste(location.of.r.scripts,"JAGS-prediction-model.R",sep="/"))
 
 set.seed(seed)
 
-outj<-jags(jags_data, inits=inits, 
+outj<-R2jags::jags(jags_data, inits=inits, 
            parameters.to.save=params,
            model.file=paste(location.of.r.scripts, 
                             jags_file_name, sep="/"),
@@ -72,7 +73,7 @@ out<-outj$BUGSoutput
 
 
 for(j in 1:length(out$sims.list)){
-  if (names(out$sims.list)[j] %in% c("eta_1", "eta_2", "eta_3", "p_eta_1", "p_eta_2", "p_eta_3") ) {
+  if (names(out$sims.list)[j] %in% c("eta", "p_eta") ) {
     write.csv(out$sims.list[[j]],
               paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-", mri_role,".csv",sep=""))
   }
