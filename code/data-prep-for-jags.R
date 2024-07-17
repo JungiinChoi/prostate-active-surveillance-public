@@ -110,8 +110,9 @@ data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missi
 # lmer fit to get initial value for covariance parameter
 var_vec <- list(length = J)
 for (i in 1:J){
+  psa_list_i <- as.data.frame(scale(psa_list[[i]]))
   mod_lmer <-lmer(psa ~ prosvol_std + age_diag_std + (1 + dxPSAdays | ID), 
-                  data = psa_list[[i]])
+                  data = psa_list_i)
   var_vec[[i]] <- apply(coef(mod_lmer)$ID, 2, var)[1:npred_ranef_psa[i]]
   var_vec[[i]] <- var_vec[[i]][2:1]
 }
@@ -197,10 +198,9 @@ for (i in 1:J){
   pgg_pirads_data_m2[i,1:n_pgg[i]] <- bxmri_list[[i]]$mripirads - 2
   
   #natural splines for continuous variables
-  modmat_pgg[i,1:n_pgg[i], 1:4] <- as.matrix(cbind(posratio_tmp, ns(bxmri_list[[i]]$dxBXdays, 3)))
+  modmat_pgg[i,1:n_pgg[i], 1:4] <- as.matrix(cbind(posratio_tmp, ns(bxmri_list[[i]]$dxBXdays, df = 3)))
   npred_pgg <- rep(4,J)
 }
-
 
 ### 6. Prior means for intercept in continuation ratio model ----------
 
