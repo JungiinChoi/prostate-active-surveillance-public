@@ -110,9 +110,8 @@ data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missi
 # lmer fit to get initial value for covariance parameter
 var_vec <- list(length = J)
 for (i in 1:J){
-  psa_list_i <- as.data.frame(scale(psa_list[[i]]))
   mod_lmer <-lmer(psa ~ prosvol_std + age_diag_std + (1 + dxPSAdays | ID), 
-                  data = psa_list_i)
+                  data = psa_list[[i]], REML = FALSE)
   var_vec[[i]] <- apply(coef(mod_lmer)$ID, 2, var)[1:npred_ranef_psa[i]]
   var_vec[[i]] <- var_vec[[i]][2:1]
 }
