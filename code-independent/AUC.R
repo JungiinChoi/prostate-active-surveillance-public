@@ -13,7 +13,8 @@ library("pROC")
 library("ROCR")
 library("splines")
 
-J <- 3
+# Number of Institutions
+J <- 8
 
 p_eta_hat <- list(length = J)
 for(j in 1:J){

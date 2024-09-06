@@ -72,10 +72,12 @@ outj<-R2jags::jags(jags_data, inits=inits,
 out<-outj$BUGSoutput
 
 
-for(j in 1:length(out$sims.list)){
-  if (names(out$sims.list)[j] %in% c("eta", "p_eta") ) {
-    write.csv(out$sims.list[[j]],
-              paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-", mri_role,".csv",sep=""))
+for(i in 1:length(out$sims.list)){
+  if (names(out$sims.list)[i] %in% "p_eta") {
+    for (k in 1:J){
+      write.csv(out$sims.list[[i]][k,,],
+                paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[i],"_", k, "-", mri_role,".csv",sep=""))
+    }
   }
 }
 
