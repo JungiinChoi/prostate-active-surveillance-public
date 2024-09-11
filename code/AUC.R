@@ -13,12 +13,13 @@ library("pROC")
 library("ROCR")
 library("splines")
 
-J <- 3
+# Number of Institutions
+J <- 8
 
 p_eta_hat <- list(length = J)
 for(j in 1:J){
   p_eta_hat[[j]] <- t(matrix(apply(read.csv(paste(location.of.generated.folder, "/jags-prediction-p_eta_", 
-                 j,"-", mri_role,".csv",sep=""))[,-1], 2, mean), ncol = 4))
+                                                  j,"-", mri_role,".csv",sep=""))[,-1], 2, mean), ncol = 4))
 }
 
 # AUC dataframe for PGG > 1, PGG > 2, PGG > 3
