@@ -18,8 +18,8 @@ J <- 8
 
 p_eta_hat <- list(length = J)
 for(j in 1:J){
-  p_eta_hat[[j]] <- t(matrix(apply(read.csv(paste(location.of.generated.folder, "/jags-prediction-p_eta_", 
-                                                  j,"-", mri_role,".csv",sep=""))[,-1], 2, mean), ncol = 4))
+  p_eta_hat[[j]] <- read.csv(paste(location.of.generated.folder, "/jags-prediction-p_eta_", 
+                                                  j,"-", mri_role,".csv",sep=""))[,-1]
 }
 
 # AUC dataframe for PGG > 1, PGG > 2, PGG > 3
@@ -35,7 +35,8 @@ for (i in 1:J){
   ind <- is.na(dx_list[[i]]$rp)
   obs <- dx_list[[i]]$rp[!ind]
   obs_larger <- cbind(as.numeric(obs>1), as.numeric(obs>2), as.numeric(obs>3))
-  exp <- p_eta_hat[[i]][, !ind]
+  ind_exp <- c(!ind, rep(FALSE,nrow(p_eta_hat[[i]]) - length(ind)))
+  exp <- t(p_eta_hat[[i]][ind_exp, ])
   exp_larger <- t(apply(exp, 2, function(x){c(sum(x[2:4]), sum(x[3:4]), x[4])}))
   for (k in 1:3){
     roc_tmp <- roc(obs_larger[,k], exp_larger[,k])

@@ -74,8 +74,9 @@ out<-outj$BUGSoutput
 
 for(i in 1:length(out$sims.list)){
   if (names(out$sims.list)[i] %in% "p_eta") {
+    tmp_mean <- apply(out$sims.list[[i]], 2:4, mean)
     for (k in 1:J){
-      write.csv(out$sims.list[[i]][k,,],
+      write.csv(tmp_mean[k,,],
                 paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[i],"_", k, "-", mri_role,".csv",sep=""))
     }
   }
