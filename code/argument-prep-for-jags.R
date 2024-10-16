@@ -52,7 +52,7 @@ if(mri_role == 0){
 inits <- function(){
   cancer_state <- cancer_state
   #latent cancer model
-  cancer_int1 <- cancer_int2 <- cancer_int3 <- rnorm(J,0,1)
+  cancer_int1 <- cancer_int2 <- cancer_int3 <- matrix(rnorm(max(npat)*J,0,1),nrow = J)
   cancer_slope1 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)
   cancer_slope2 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)
   cancer_slope3 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)

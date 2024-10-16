@@ -16,9 +16,11 @@ for (index in 1:npred_cancer[1]) {
 }
   
 for (i in 1:J){
-  cancer_int1[i] ~ dnorm(cancer_int1_mean[i], 1) 
-  cancer_int2[i] ~ dnorm(cancer_int2_mean[i], 1)
-  cancer_int3[i] ~ dnorm(cancer_int3_mean[i], 1) 
+  for(j in 1:npat[i]){
+    cancer_int1[i,j] ~ dnorm(cancer_int1_mean[i], 30) 
+    cancer_int2[i,j] ~ dnorm(cancer_int2_mean[i], 30)
+    cancer_int3[i,j] ~ dnorm(cancer_int3_mean[i], 30) 
+  }
   for(index in 1:npred_cancer[i]) {
     cancer_slope1[index,i] ~ dnorm(cancer_coef_mean[index], 1)
     cancer_slope2[index,i] ~ dnorm(cancer_coef_mean[index], 1)
@@ -96,9 +98,9 @@ if(mri_role %in% c("MRI", "MRI_ST")){
 for (i in 1:J){
   ## continuation ratio model for true cancer state
   for(j in 1:npat[i]){ 
-    exponent1[i,j] <- cancer_int1[i] + inprod(cancer_slope1[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
-    exponent2[i,j] <- cancer_int2[i] + inprod(cancer_slope2[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
-    exponent3[i,j] <- cancer_int3[i] + inprod(cancer_slope3[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
+    exponent1[i,j] <- cancer_int1[i,j] + inprod(cancer_slope1[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
+    exponent2[i,j] <- cancer_int2[i,j] + inprod(cancer_slope2[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
+    exponent3[i,j] <- cancer_int3[i,j] + inprod(cancer_slope3[1:npred_cancer[i],i], modmat_cancer[i,j,1:npred_cancer[i]])
     p_eta[i, j, 1] <- exp(exponent1[i,j])/(1+exp(exponent1[i,j]))
     p_eta[i, j, 2] <- 1/(1+exp(exponent1[i,j])) * exp(exponent2[i,j])/(1+exp(exponent2[i,j]))
     p_eta[i, j, 3] <- 1/(1+exp(exponent1[i,j])) * 1/(1+exp(exponent2[i,j])) * exp(exponent3[i,j])/(1+exp(exponent3[i,j]))

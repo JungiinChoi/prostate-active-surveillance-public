@@ -15,8 +15,9 @@
 ### 1. Clear workspace
 rm(list=ls())
 args <- commandArgs(trailingOnly = TRUE)
-mri_role <- args[1]
-workdir <- args[2]
+mri_role <- "both"
+#workdir <- args[2]
+mri_st <- TRUE
 
 ### 2. Define directories, file names
 base.location <- workdir
@@ -52,6 +53,8 @@ data.check <- function(condition, message){
 
 #Load data; tidy, check, and shape
 #source("code/data-load-check-and-shaping.R") #need to rerun this with new data
+to_mask <- 1
+K <- 1
 to.mask<- to_mask
 
 options(warn = 0)

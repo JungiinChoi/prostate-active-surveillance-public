@@ -38,6 +38,12 @@ bx_data <- read.csv(paste0(location.of.data,"/bx.csv"))
 psa_data <- read.csv(paste0(location.of.data,"/psa.csv"))
 mri_data <- read.csv(paste0(location.of.data,"/mri.csv"))
 
+# ID preprocess
+id_mapping <- function(x){which(dx_data$id == x)}
+dx_data$ID <- 1:nrow(dx_data)
+bx_data$ID <- sapply(bx_data$id, id_mapping)
+psa_data$ID <- sapply(psa_data$id, id_mapping)
+mri_data$ID <- sapply(mri_data$id, id_mapping)
 
 ### 1. Format patients' demographic (DX) data for JAGS run ---------
 
@@ -61,6 +67,8 @@ dx_data$vol_std <- scale(dx_data$vol)[,1]
 # Covariate matrix for predictors of True gleasand grade
 # Covariates can be any relevant predictors: here, age and vol
 
+dx_data$vol_std[is.na(dx_data$vol_std)] <- mean(dx_data$vol_std, na.rm = TRUE)
+dx_data$age_diag_std[is.na(dx_data$age_diag_std)] <- mean(dx_data$age_diag_std, na.rm = TRUE)
 modmat_cancer <- as.matrix(cbind(dx_data$age_diag_std, 
                                  dx_data$vol_std))
 
@@ -98,7 +106,7 @@ psa_data <- psa_data %>% left_join(age_tmp, by = "ID") %>%
   left_join(prosvol_tmp, by = "ID")
 psa_data$prosvol_std[is.na(psa_data$prosvol_std)] <- 0
 
-
+psa_data$age_diag_std[is.na(psa_data$age_diag_std)] <- 0
 modmat_fixef_psa <- as.matrix(cbind(psa_data$prosvol_std, psa_data$age_diag_std))
 npred_fixef_psa <- ncol(modmat_fixef_psa)
 data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missing volumes in PSA data. Email Yates; she will check orginal script.")
@@ -155,7 +163,7 @@ bxmri_data$pgg <- apply(bxmri_data[,2:3], 1, gleason_to_pgg)
 
   cancer_state <- bxmri_data %>% group_by(ID) %>%
     summarise(pgg_mean = round(mean(pgg))) %>%
-    right_join(dx_list, by = "ID") %>%
+    right_join(dx_data, by = "ID") %>%
     filter(is.na(rp)) %>%
     select(pgg_mean)
 
@@ -183,11 +191,20 @@ pgg_patient_index_map <- subj_pgg
   
   #natural splines for continuous variables
   modmat_pgg <- as.matrix(cbind(posratio_tmp, ns(bxmri_data$dxBXdays, df = 3)))
-  npred_pgg <- sapply(modmat_pgg, ncol)
+  npred_pgg <- ncol(modmat_pgg)
 
+### 6. Format MRI data for JAGS run -------------
+## formate MRI data for outcome model
+  
 
+pirads_data <- ifelse(mri_data$mripirads %in% c(1, 2), 1,
+                      ifelse(mri_data$mripirads %in% c(3), 2, 3))  
+  
+pirads_patient_index_map <- mri_data$ID
+npat_pirads <- nrow(mri_data)
+  
 
-### 6. Prior means for intercept in continuation ratio model ----------
+### 7. Prior means for intercept in continuation ratio model ----------
 
 logit <- function(x) log(x / (1-x))
 
@@ -209,6 +226,19 @@ logit <- function(x) log(x / (1-x))
   for (k in 1:4){
     phat_b[k] <- sum(PGG == k) / length(PGG)
   }
-  pgg_int1_mean[i] <- logit(phat_b[1])
-  pgg_int2_mean[i] <- logit(phat_b[2] / (1 - phat_b[1]))
-  pgg_int3_mean[i] <- logit(phat_b[3] / (1 - phat_b[1] - phat_b[2]))
+  pgg_int1_mean <- logit(phat_b[1])
+  pgg_int2_mean <- logit(phat_b[2] / (1 - phat_b[1]))
+  pgg_int3_mean <- logit(phat_b[3] / (1 - phat_b[1] - phat_b[2]))
+
+  
+# Pirads
+  pirads_int1_mean <- pirads_int2_mean <- 0 
+  
+  phat_p <- rep(0,3)
+  for (k in 1:3){
+    phat_p[k] <- sum(pirads_data == k) / length(pirads_data)
+  }
+  pirads_int1_mean <- logit(phat_p[1])
+  pirads_int2_mean <- logit(phat_p[2] / (1 - phat_p[1]))
+  
+  
