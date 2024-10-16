@@ -16,7 +16,7 @@ for (index in 1:npred_cancer[1]) {
 }
   
 for (i in 1:J){
-  for(j in 1:npat[i]){
+  for(j in 1:max(npat)){
     cancer_int1[i,j] ~ dnorm(cancer_int1_mean[i], 30) 
     cancer_int2[i,j] ~ dnorm(cancer_int2_mean[i], 30)
     cancer_int3[i,j] ~ dnorm(cancer_int3_mean[i], 30) 

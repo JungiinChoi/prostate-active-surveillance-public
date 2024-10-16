@@ -12,10 +12,10 @@
 
 ### 1. Clear workspace
 rm(list=ls())
-args <- commandArgs(trailingOnly = TRUE)
-mri_role <- args[1]
-workdir <- args[2]
-J <- args[3]
+#args <- commandArgs(trailingOnly = TRUE)
+mri_role <- "MRI_ST"
+#workdir <- args[2]
+J <- 8
 
 ### 2. Define directories, file names
 
