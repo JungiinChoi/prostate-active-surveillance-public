@@ -26,7 +26,7 @@ p1 <- ggplot(roc_data, aes(x = specificity, y = sensitivity)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +  # Diagonal line
   theme_minimal(base_size = 15) +  # Minimal theme with larger text
   labs(
-    title = sprintf("ROC Curve for (AUC = %.2f)", 0.69), 
+    title = sprintf("ROC Curve for (AUC = %.2f)", auc(roc_obj)), 
     x = "1 - Specificity", 
     y = "Sensitivity"
   ) +
@@ -35,8 +35,9 @@ p1 <- ggplot(roc_data, aes(x = specificity, y = sensitivity)) +
     axis.title = element_text(size = 14),
     axis.text = element_text(size = 12)
   ) +
-  annotate("text", x = 0.5, y = 0.1, label = sprintf("AUC: %.2f", 0.69), color = "black", size = 6, fontface = "italic") +
+  annotate("text", x = 0.5, y = 0.1, label = sprintf("AUC: %.2f", auc(roc_obj)), color = "black", size = 6, fontface = "italic") +
   scale_color_manual(values = c("#00BFC4", "#F8766D"))  # Custom colors
+AUC_indepentent <- auc(roc_obj)
 
 k <- 2
 
@@ -70,6 +71,7 @@ p2 <- ggplot(roc_data, aes(x = specificity, y = sensitivity)) +
   ) +
   annotate("text", x = 0.5, y = 0.1, label = sprintf("AUC: %.2f", auc(roc_obj)), color = "black", size = 6, fontface = "italic") +
   scale_color_manual(values = c("#00BFC4", "#F8766D"))  # Custom colors
+AUC_indepentent <- c(AUC_indepentent, auc(roc_obj))
 
 k <- 3
 
@@ -91,7 +93,7 @@ p3 <- ggplot(roc_data, aes(x = specificity, y = sensitivity)) +
   geom_abline(slope = 1, intercept = 0, linetype = "dashed", color = "gray") +  # Diagonal line
   theme_minimal(base_size = 15) +  # Minimal theme with larger text
   labs(
-    title = sprintf("ROC Curve for (AUC = %.2f)", 0.73), 
+    title = sprintf("ROC Curve for Independent Model (AUC = %.2f)", auc(roc_obj)), 
     x = "1 - Specificity", 
     y = "Sensitivity"
   ) +
@@ -100,10 +102,17 @@ p3 <- ggplot(roc_data, aes(x = specificity, y = sensitivity)) +
     axis.title = element_text(size = 14),
     axis.text = element_text(size = 12)
   ) +
-  annotate("text", x = 0.5, y = 0.1, label = sprintf("AUC: %.2f", 0.73), color = "black", size = 6, fontface = "italic") +
+  annotate("text", x = 0.5, y = 0.1, label = sprintf("AUC: %.2f", auc(roc_obj)), color = "black", size = 6, fontface = "italic") +
   scale_color_manual(values = c("#00BFC4", "#F8766D"))  # Custom colors
 
+AUC_indepentent <- c(AUC_indepentent, auc(roc_obj))
+
 grid.arrange(p1, p2, p3, nrow = 1)
+
+# List of Independent AUC
+
+names(AUC_indepentent) <- c("> 1", "> 2", "> 3")
+AUC_indepentent
 
 
 # Diagnostic Misc
