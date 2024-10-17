@@ -15,7 +15,8 @@ rm(list=ls())
 #args <- commandArgs(trailingOnly = TRUE)
 mri_role <- "MRI_ST"
 #workdir <- args[2]
-J <- 8
+J <- 3
+K <- 1
 
 ### 2. Define directories, file names
 

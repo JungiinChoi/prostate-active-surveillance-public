@@ -14,7 +14,7 @@ library("ROCR")
 library("splines")
 
 # Number of Institutions
-J <- 8
+J <- 3
 
 p_eta_hat <- list(length = J)
 for(j in 1:J){
@@ -47,3 +47,9 @@ for (i in 1:J){
 
 ## AUC results
 AUC_list
+
+
+
+#########
+
+
