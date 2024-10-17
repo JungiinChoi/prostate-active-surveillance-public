@@ -14,9 +14,7 @@
 
 ### 1. Clear workspace
 rm(list=ls())
-args <- commandArgs(trailingOnly = TRUE)
 mri_role <- "both"
-#workdir <- args[2]
 mri_st <- TRUE
 
 ### 2. Define directories, file names

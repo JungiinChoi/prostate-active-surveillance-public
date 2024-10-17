@@ -15,9 +15,9 @@ for (index in 1:npred_cancer) {
   cancer_coef_mean[index] ~ dnorm(0,1)
 }
 for(j in 1:npat){
-  cancer_int1[j] ~ dnorm(cancer_int1_mean, 10) 
-  cancer_int2[j] ~ dnorm(cancer_int2_mean, 10)
-  cancer_int3[j] ~ dnorm(cancer_int3_mean, 10) 
+  cancer_int1[j] ~ dnorm(cancer_int1_mean, 8) 
+  cancer_int2[j] ~ dnorm(cancer_int2_mean, 8)
+  cancer_int3[j] ~ dnorm(cancer_int3_mean, 8) 
 }
 for(index in 1:npred_cancer) {
   cancer_slope1[index] ~ dnorm(cancer_coef_mean[index], 1)

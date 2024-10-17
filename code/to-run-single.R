@@ -12,9 +12,7 @@
 
 ### 1. Clear workspace
 rm(list=ls())
-#args <- commandArgs(trailingOnly = TRUE)
 mri_role <- "MRI_ST"
-#workdir <- args[2]
 J <- 3
 K <- 1
 
@@ -24,7 +22,7 @@ base.location <- workdir
 location.of.data <- paste0(base.location, "/data")
 location.of.r.scripts <- paste0(base.location, "/code")
 location.of.generated.files <- paste0(base.location, "/generated-files")
-location.of.generated.folder = paste(location.of.generated.files, "/", mri_role, sep="")
+location.of.generated.folder = paste(location.of.generated.files, "/hier", sep="")
 ifelse(!dir.exists(location.of.generated.folder), dir.create(location.of.generated.folder), FALSE)
 
 ### 3. Load libraries

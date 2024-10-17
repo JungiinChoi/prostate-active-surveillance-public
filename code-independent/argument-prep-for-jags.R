@@ -138,7 +138,7 @@ if(mri_role %in% c("outcome", "both")){
 ## n.chains == # cores - 1
 
 # change length; burn-in; number thinned; number of chains
-n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
+n.iter <- 1000; n.burnin <- 250; n.thin <- 1; n.chains <- 1
 
 
 
