@@ -23,7 +23,7 @@ jags_data_init <-list(
   pgg_int1_mean = pgg_int1_mean, pgg_int2_mean = pgg_int2_mean, pgg_int3_mean = pgg_int3_mean,
   
   ## cancer model
-  nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=npat,
+  nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=as.integer(npat),
   cancer_data = cancer_data_true, modmat_cancer = modmat_cancer,
   npat_cancer_known=npat_cancer_known, npred_cancer=npred_cancer,
   

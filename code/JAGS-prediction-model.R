@@ -12,14 +12,14 @@ cat(
 
 # priors for sequential model for ordinal eta as outcome
 for (index in 1:npred_cancer[1]) {
-   cancer_coef_mean[index] ~ dnorm(0,1)
+   cancer_coef_mean[index] ~ dnorm(0,0.001)
 }
   
 for (i in 1:J){
   for(j in 1:max(npat)){
-    cancer_int1[i,j] ~ dnorm(cancer_int1_mean[i], 4) 
-    cancer_int2[i,j] ~ dnorm(cancer_int2_mean[i], 4)
-    cancer_int3[i,j] ~ dnorm(cancer_int3_mean[i], 4) 
+    cancer_int1[i,j] ~ dnorm(cancer_int1_mean[i], 1) 
+    cancer_int2[i,j] ~ dnorm(cancer_int2_mean[i], 1)
+    cancer_int3[i,j] ~ dnorm(cancer_int3_mean[i], 1) 
   }
   for(index in 1:npred_cancer[i]) {
     cancer_slope1[index,i] ~ dnorm(cancer_coef_mean[index], 1)
