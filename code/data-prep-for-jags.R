@@ -115,7 +115,7 @@ data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missi
 var_vec <- list(length = J)
 for (i in 1:J){
   mod_lmer <-lmer(psa ~ prosvol_std + age_diag_std + (1 + dxPSAdays | ID), 
-                  data = psa_list[[i]], REML = FALSE)
+                  data = psa_list[[i]])
   var_vec[[i]] <- apply(coef(mod_lmer)$ID, 2, var)[1:npred_ranef_psa[i]]
   var_vec[[i]] <- var_vec[[i]][2:1]
 }
