@@ -23,7 +23,7 @@ jags_data_init <-list(
   pgg_int1_mean = pgg_int1_mean, pgg_int2_mean = pgg_int2_mean, pgg_int3_mean = pgg_int3_mean,
   
   ## cancer model
-  nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=npat,
+  nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=as.integer(npat),
   cancer_data = cancer_data_true, modmat_cancer = modmat_cancer,
   npat_cancer_known=npat_cancer_known, npred_cancer=npred_cancer,
   
@@ -52,7 +52,7 @@ if(mri_role == 0){
 inits <- function(){
   cancer_state <- cancer_state
   #latent cancer model
-  cancer_int1 <- cancer_int2 <- cancer_int3 <- rnorm(J,0,1)
+  cancer_int1 <- cancer_int2 <- cancer_int3 <- matrix(rnorm(max(npat)*J,0,1),nrow = J)
   cancer_slope1 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)
   cancer_slope2 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)
   cancer_slope3 <- matrix(rnorm(npred_cancer[1]*J,mean=0,sd=0.25), ncol = J)
@@ -123,7 +123,7 @@ params <- c(
 ## n.chains == # cores - 1
 
 # change length; burn-in; number thinned; number of chains
-n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
+n.iter <- 1000; n.burnin <- 250; n.thin <- 1; n.chains <- 1
 
 
 

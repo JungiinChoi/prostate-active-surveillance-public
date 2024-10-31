@@ -14,16 +14,15 @@
 
 ### 1. Clear workspace
 rm(list=ls())
-args <- commandArgs(trailingOnly = TRUE)
-mri_role <- args[1]
-workdir <- args[2]
+mri_role <- "both"
+mri_st <- TRUE
 
 ### 2. Define directories, file names
 base.location <- workdir
 location.of.data <- paste0(base.location, "/data-independent")
 location.of.r.scripts <- paste0(base.location, "/code-independent")
 location.of.generated.files <- paste0(base.location, "/generated-files")
-location.of.generated.folder = paste(location.of.generated.files, "/indep_",sep="")
+location.of.generated.folder = paste(location.of.generated.files, "/indep",sep="")
 ifelse(!dir.exists(location.of.generated.folder), dir.create(location.of.generated.folder), FALSE)
 
 
@@ -52,6 +51,8 @@ data.check <- function(condition, message){
 
 #Load data; tidy, check, and shape
 #source("code/data-load-check-and-shaping.R") #need to rerun this with new data
+to_mask <- 1
+K <- 1
 to.mask<- to_mask
 
 options(warn = 0)
@@ -76,10 +77,11 @@ outj<-jags(jags_data, inits=inits,
            n.thin=n.thin, n.chains=n.chains, n.burnin=n.burnin, n.iter=n.iter)
 out<-outj$BUGSoutput
 
-
 for(j in 1:length(out$sims.list)){
-  if (names(out$sims.list)[j] %in% c("eta_1", "eta_2", "eta_3", "p_eta_1", "p_eta_2", "p_eta_3") ) {
-    write.csv(out$sims.list[[j]],
+  if (names(out$sims.list)[j] %in% c("p_eta") ) {
+    p_eta_est <- apply(out$sims.list[[j]], c(2,3), mean)
+    write.csv(p_eta_est,
               paste(location.of.generated.folder, "/jags-prediction-", names(out$sims.list)[j],"-", mri_role,".csv",sep=""))
   }
 }
+

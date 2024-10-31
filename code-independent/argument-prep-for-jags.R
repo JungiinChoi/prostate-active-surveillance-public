@@ -21,7 +21,6 @@ jags_data_init <-list(
   nlevel_cancer=nlevel_cancer, nlevel_cancer_bin=nlevel_cancer_bin, npat=npat,
   cancer_data=cancer_data, npat_cancer_known=npat_cancer_known,
   modmat_cancer=modmat_cancer, npred_cancer=npred_cancer,
-  n_mask=n_mask,
   ## psa model
   nobs_psa=nobs_psa, log_psa_data=log_psa_data, psa_patient_index_map=psa_patient_index_map,
   modmat_ranef_psa=modmat_ranef_psa, modmat_fixef_psa=modmat_fixef_psa, 
@@ -39,14 +38,12 @@ if(mri_role == 0){
                              pgg_pirads_data_m2 = pgg_pirads_data_m2)
   }else if(mri_role == "outcome"){
     jags_data_append <- list(pirads_data = pirads_data, npat_pirads = npat_pirads,
-                             pirads_patient_index_map=pirads_patient_index_map,
-                             npred_pirads = npred_pirads)
+                             pirads_patient_index_map=pirads_patient_index_map)
   }else(
     jags_data_append <- list(pgg_pirads_data = pgg_pirads_data,
                              pgg_pirads_data_m2 = pgg_pirads_data_m2,
                              pirads_data = pirads_data, npat_pirads = npat_pirads,
-                             pirads_patient_index_map=pirads_patient_index_map,
-                             npred_pirads = npred_pirads)
+                             pirads_patient_index_map=pirads_patient_index_map)
   )
   jags_data <- append(jags_data_init, jags_data_append)
 }
@@ -54,16 +51,15 @@ if(mri_role == 0){
 
 ### 2. Initialize model parameters ---------------
 inits <- function(){
-  cancer_state <- dx.ucsf$rp[is.na(cancer_data)]
+  cancer_state <- sample(1:4, sum(is.na(cancer_data)), replace=TRUE)
   #latent cancer model
-  cancer_int1 <- cancer_int2 <-cancer_int3 <-rnorm(1,0,1)
+  cancer_int1 <- cancer_int2 <-cancer_int3 <-rnorm(npat,0,1)
   cancer_slope1 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_slope2 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_slope3 <- rnorm(npred_cancer,mean=0,sd=0.25)
   cancer_coef_mean = rnorm(npred_cancer,mean=0,sd=0.25)
   
   #psa model
-  scale_ranef_mean_psa <- rlnorm(npred_ranef_psa)
   mu_raw <- as.matrix(cbind(rnorm(npred_ranef_psa),rnorm(npred_ranef_psa)))
   Tau_B_raw <- rwishart((npred_ranef_psa+1),diag(npred_ranef_psa)*var_vec)$W
   resid_var_psa <- min(rlnorm(1),1)
@@ -86,9 +82,9 @@ inits <- function(){
   #mri as outcome model 
   if(mri_role %in% c("outcome", "both")){
     pirads_int1 <- pirads_int2 <- rnorm(1,0,1)
-    pirads_slope1 <- rnorm(npred_pirads + (nlevel_cancer-1),mean=0,sd=0.25)
-    pirads_slope2 <- rnorm(npred_pirads + (nlevel_cancer-1),mean=0,sd=0.25)
-    pirads_coef_mean = rnorm(npred_pirads + (nlevel_cancer-1),mean=0,sd=0.25) 
+    pirads_slope1 <- rnorm((nlevel_cancer-1),mean=0,sd=0.25)
+    pirads_slope2 <- rnorm((nlevel_cancer-1),mean=0,sd=0.25)
+    pirads_coef_mean = rnorm((nlevel_cancer-1),mean=0,sd=0.25) 
   }
   
   inits_list <- list(cancer_state=cancer_state,
@@ -96,7 +92,7 @@ inits <- function(){
                      cancer_slope1=cancer_slope1,cancer_slope2=cancer_slope2,cancer_slope3=cancer_slope3,
                      cancer_coef_mean = cancer_coef_mean,
                      
-                     scale_ranef_mean_psa=scale_ranef_mean_psa, mu_raw=mu_raw, Tau_B_raw=Tau_B_raw, 
+                     mu_raw=mu_raw, Tau_B_raw=Tau_B_raw, 
                      resid_var_psa=resid_var_psa, fixef_coefficient=fixef_coefficient,
                      
                      pgg_int1=pgg_int1, pgg_int2=pgg_int2, pgg_int3=pgg_int3, 
@@ -117,7 +113,7 @@ inits <- function(){
 }
 
 ### 3. Define parameters to be tracked ---------------
-params <- c("eta.track",
+params <- c("eta", "p_eta",
             "cancer_int1", "cancer_int2", "cancer_int3",
             "cancer_slope1", "cancer_slope2", "cancer_slope3", 
             "cancer_state",
@@ -127,8 +123,8 @@ params <- c("eta.track",
 )
 
 if(mri_role %in% c("outcome", "both")){
-  newparams <- c("pirads_int1", "pirads_int2", "pirads_int3",
-                 "pirads_slope1", "pirads_slope2", "pirads_slope3" )
+  newparams <- c("pirads_int1", "pirads_int2",
+                 "pirads_slope1", "pirads_slope2")
   params <- c(params, newparams)
 }
 
@@ -142,7 +138,7 @@ if(mri_role %in% c("outcome", "both")){
 ## n.chains == # cores - 1
 
 # change length; burn-in; number thinned; number of chains
-n.iter <- 10000; n.burnin <- 2500; n.thin <- 10; n.chains <- 1
+n.iter <- 1000; n.burnin <- 250; n.thin <- 1; n.chains <- 1
 
 
 

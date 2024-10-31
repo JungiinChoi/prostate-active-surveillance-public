@@ -99,9 +99,13 @@ for (i in 1:J){
   psa_patient_index_map[i, 1:nobs_psa[i]] <- psa_list[[i]]$ID
   modmat_ranef_psa[i,1:nobs_psa[i],1:2] <- as.matrix(cbind(rep(1,nobs_psa[i]), 
                                                            psa_list[[i]]$dxPSAdays))
+  psa_list[[i]]$prosvol_std[is.na(psa_list[[i]]$prosvol_std)] <- 0
+  
+  psa_list[[i]]$age_diag_std[is.na(psa_list[[i]]$age_diag_std)] <- 0
   modmat_fixef_psa[i,1:nobs_psa[i],1:2] <- as.matrix(cbind(psa_list[[i]]$prosvol_std, psa_list[[i]]$age_diag_std))
+
 }
-data.check(condition=as.logical(sum(is.na(log_psa_data))==0), message="Missing PSA values. Email Yates; she will check orginal script.")
+
 data.check(condition=as.logical(sum(is.na(modmat_ranef_psa))==0), message="Missing time since dx in PSA data. Email Yates; she will check orginal script.")
 
 data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missing volumes in PSA data. Email Yates; she will check orginal script.")
@@ -111,7 +115,7 @@ data.check(condition=as.logical(sum(is.na(modmat_fixef_psa))==0), message="Missi
 var_vec <- list(length = J)
 for (i in 1:J){
   mod_lmer <-lmer(psa ~ prosvol_std + age_diag_std + (1 + dxPSAdays | ID), 
-                  data = psa_list[[i]], REML = FALSE)
+                  data = psa_list[[i]])
   var_vec[[i]] <- apply(coef(mod_lmer)$ID, 2, var)[1:npred_ranef_psa[i]]
   var_vec[[i]] <- var_vec[[i]][2:1]
 }
